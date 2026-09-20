@@ -104,7 +104,7 @@ for pat in ['整理中', '通勤', '洗碗', '咖啡馆', '爵士', '睡前', '�
 if [ -n "$NEWCARD" ]; then
   "$ADB" shell "input tap $NEWCARD"; sleep 3
   echo "  详情页已打开"
-  sleep 4  # 详情停留（AI 摘要 + 相关想法 + 延展）
+  sleep 6  # 详情停留（AI 摘要 + 相关想法 共2条——「旧想法和新想法联系起来」的叙事瞬间）+ 延展
 else
   echo "  WARN: 新卡未定位到，跳过详情"
 fi
