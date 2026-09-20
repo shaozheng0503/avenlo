@@ -502,3 +502,21 @@ export AVENLO_LLM_MODEL=qwen-plus  # 可选
 **配套**：`scripts/verify/` 9 个 adb 验证脚本入库（启动/崩溃/UI dump/网络/E2E 全流程，含设备等待防抖）；commit 15f72ab
 
 **遗留不变**：真机验证（等设备）、导航 #1 队友确认、真 key 冒烟
+
+### 8.9 第十二轮实绩：全屏验证 + STT 真链路加固（2026-09-20 21:35）✅
+
+**8 屏 UI 全部截图验证**（`emulator-screens/04~10`）：首页、详情（AI 摘要/相关想法/延展思路 Tab）、灵感集、搜索（常用标签 + 筛选 chips）、记录、统计（复用今日回顾）、我的（戒指电量环）——**UI 层验证覆盖率 8/8**。音频直传链路确认全通（3 张新卡全带 uploads/ 相对路径 audioUrl）。
+
+**DashscopeStt 修复两处真 bug**（commit 5325f2a）：
+| # | 问题 | 影响 | 修复 |
+|---|------|------|------|
+| 1 | `transcription_url` 结果文件 URL 被直接当 transcript 返回 | 真 key 接入后卡片转写变 URL 字符串 | 补 `_fetch_result`：GET 结果文件 → `transcripts[0].text` |
+| 2 | 同步 urllib 调用在 async 函数内，轮询最长 60s | 卡死 FastAPI 事件循环，server 全挂 | 全部 `asyncio.to_thread` 下放线程池（LLM 侧同修） |
+
+**假通义服务实测**（`tests/fake_dashscope.py`）：三段式协议 + FAILED/data:URL 拒收/事件循环不阻塞 5 组用例全过——`DashscopeStt` 升级为「假服务实测通过」，与 LLM 侧同等成色。
+
+**接口限制声明**：通义 `file_urls` 仅收公网 URL（http/https），本地文件 data:base64 会被拒——真机链路音频需 OSS 中转（M3 议题，docstring 已注明）。
+
+**Demo 数据已重置**：server 种子态 8 ideas/4 collections，测试音频清空。正式 Demo 直接可跑。
+
+**遗留**：真机验证、导航 #1 队友确认、真 key 冒烟（三者在「等外部输入」清单）。
