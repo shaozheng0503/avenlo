@@ -37,6 +37,8 @@ class AvenloApi(private val baseUrl: String) {
     /** POST /captures —— 触发事件。audioUrl 优先传 server 相对路径（先 uploadAudio），本机路径仅 Demo 兜底 */
     suspend fun submitCapture(req: CaptureRequest): CaptureResponse =
         http.post("$baseUrl/captures") {
+            // Ktor 2.x：请求侧必须显式声明 Content-Type，ContentNegotiation 才会走 JSON 序列化
+            contentType(ContentType.Application.Json)
             setBody(req)
         }.body()
 

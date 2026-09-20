@@ -74,6 +74,9 @@ fun HomeScreen(nav: NavController) {
     val repo = ServiceLocator.ideaRepo
     val ideas by repo.observeIdeas().collectAsState(initial = emptyList())
 
+    // 冷启动即拉 server 列表（merge 保留本地种子；断网时 runCatching 静默回落本地数据）
+    LaunchedEffect(Unit) { repo.refresh() }
+
     // 存在 QUEUED 占位卡时每 2s 轮询刷新（服务端 3s 状态机：queued → ok）
     LaunchedEffect(ideas.any { it.status == CardStatus.QUEUED }) {
         while (ideas.any { it.status == CardStatus.QUEUED }) {

@@ -21,7 +21,7 @@ import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 /** 左 44dp 圆角方形波形图标（三色轮换：陶土/鼠尾草绿/淡紫变体） */
 @Composable
 fun WaveIconTile(toneIndex: Int, modifier: Modifier = Modifier, icon: ImageVector? = null) {
-    val tone = AvenloTokens.IconTones[toneIndex % AvenloTokens.IconTones.size]
+    val tone = AvenloTokens.IconTones[Math.floorMod(toneIndex, AvenloTokens.IconTones.size)]
     Box(
         modifier = modifier
             .size(44.dp)

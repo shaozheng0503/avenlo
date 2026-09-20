@@ -53,4 +53,10 @@ data class IdeaCard(
 }
 
 @Serializable
-enum class CardStatus { OK, NEEDS_REVIEW, QUEUED, SYNCING, DELETED }
+enum class CardStatus {
+    @kotlinx.serialization.SerialName("ok") OK,
+    @kotlinx.serialization.SerialName("needs_review") NEEDS_REVIEW,
+    @kotlinx.serialization.SerialName("queued") QUEUED,
+    @kotlinx.serialization.SerialName("syncing") SYNCING,
+    @kotlinx.serialization.SerialName("deleted") DELETED
+}
