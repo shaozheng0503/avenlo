@@ -727,3 +727,24 @@ commit 见本轮 git log；README 工程结构同步（13 端点/13 项回归/�
 **修复**：10 张卡补语义关联（与 `_MOCK_RELATED` 同口径设计）：咖啡馆→咖啡馆工作+夜骑；写作→播客+徒步；城市系互连；播客→旅行+菜市场；照片→露水+城市；露水→配色+徒步；咖啡馆工作→咖啡馆+播客；徒步→露水+旅行。引用闭环无悬空。
 
 **验证**：server 11/11 全覆盖（`related 为空的卡: 无`）；App 咖啡馆卡详情「共2条」+ 咖啡馆与工作(相似主题) + 夜骑的城市观察(同灵感集) 渲染 PASS；回归 test_admin_reset 3/3 + test_auto_related 8/8 无破坏。commit 79ac2d2。
+
+### 8.27 第三十三轮实绩：灵感集内页 + 回归脚本六处加固（2026-09-21 04:30）✅
+
+**缺口一（评委动线断头）**：灵感集卡片「12条」点进去没有反应——列表页是死胡同，评委第二次点击就会流失。
+
+**修复一**：新建 `CollectionDetailScreen`（路由 `collection/{collectionId}`），灵感集卡片加 clickable。过滤策略 = collectionId 精确匹配 + 语义标签兜底（col_01←旅行/户外、col_02←创作/灵感、col_03←自然/观察/城市、col_04←日记/摄影/播客），保证四个灵感集都非空。seed 的 count 与实际条数对齐（12→3 / 15→3 / 7→5）。commit 7a8f222。
+
+**缺口二（回归自身脆弱）**：全量回归暴露 3 项 FAIL，连环排查发现六类脆弱点，逐一修复：
+
+| # | 脆弱点 | 根因 | 修复 |
+|---|--------|------|------|
+| 1 | 搜索框 tap 落空 | 硬编码坐标 135,310 在新布局下落在框外（实际 bounds 中心 371,346） | 新建 `tap_node.py`：dump 后按 bounds 计算中心点自适应 tap |
+| 2 | bash 内嵌 python 正则失效 | `$(python -c "...中文顿号...")` 转义破坏正则（本地直跑成功） | 同上——独立 .py 脚本根治 |
+| 3 | find_tap 用旧 dump | cold_start_home 后未重新 dump | 调用前先 dump_to_tmp |
+| 4 | App 不在首页 | force-stop 偶发不送达 → am start 前台化旧任务，NavHost 恢复到任意屏 | cold_start_home 带首页验证 + 二次重试；step2 双 force-stop |
+| 5 | 搜索框残留查询 | rememberSaveable 跨状态恢复保留上次输入 | step7 加「清空」按钮处理 |
+| 6 | reset 偶发不干净 | server 请求竞态 | reset 后验证结果 + 失败二次 reset |
+
+**验证**：全量回归 **13/13 PASS**（R01~R10 截图同步刷新），灵感集内页四集 3/5/3/5 全非空。commit 3a5a5d2。
+
+**经验沉淀**：Activity 状态恢复是对抗性回归的头号敌人——「App 启动了」≠「App 在首页」；uiautomator 的坐标必须每次从 bounds 现算，跨轮次缓存坐标必失效。
