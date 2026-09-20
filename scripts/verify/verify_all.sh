@@ -215,6 +215,63 @@ else
   bad "首页找不到「关于旅行的灵感」"
 fi
 
+echo "=== step8.5: 删除链路（更多菜单→确认→server 软删） ==="
+# 冷启动回首页（返回栈里有多层详情页，keyevent 4 只弹一层，不可靠）
+# 目标卡选 idea_02「写作素材：时间与记忆」——今天分组首屏可见，无需滚动
+# （滚动找底部分组卡不可靠：粗滚动会跳过目标，且分组头会压缩卡位置）
+cold_start_home
+DEL_TARGET=""
+for i in 1 2 3; do
+  dump_to_tmp
+  DEL_TARGET=$(find_tap "
+for m in re.finditer(r'text=\"写作素材：时间与记忆\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+  [ -n "$DEL_TARGET" ] && break
+  scroll_down
+done
+if [ -n "$DEL_TARGET" ]; then
+  "$ADB" shell "input tap $DEL_TARGET"; sleep 3
+  # 点更多（content-desc 或右上坐标兜底）
+  dump_to_tmp
+  MORE=$(find_tap "
+for m in re.finditer(r'content-desc=\"更多\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+  [ -z "$MORE" ] && MORE="1010 175"
+  "$ADB" shell "input tap $MORE"; sleep 2
+  dump_to_tmp
+  DEL=$(find_tap "
+for m in re.finditer(r'text=\"删除这条灵感\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+  if [ -n "$DEL" ]; then
+    "$ADB" shell "input tap $DEL"; sleep 2
+    dump_to_tmp
+    CONFIRM=$(find_tap "
+for m in re.finditer(r'text=\"删除\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+    [ -n "$CONFIRM" ] && "$ADB" shell "input tap $CONFIRM"; sleep 4
+    # 判据：idea_02 从列表消失（不能用固定总数——step3 的捕捉新卡会让基数漂移）
+    N_DEL=$(server_json "/ideas" "not any(i.get('id') == 'idea_02' for i in d)")
+    if [ "$N_DEL" = "1" ]; then ok "删除链路 server 软删生效（idea_02 已移除）"; else bad "删除后 server 卡数异常"; fi
+    shot "R10_delete_flow"
+  else
+    bad "删除菜单项未出现"
+  fi
+else
+  bad "「写作素材：时间与记忆」卡未找到"
+fi
+
 echo "=== step9: 恢复种子态 ==="
 R=$(curl -s --noproxy '*' -X POST "$SERVER/admin/reset")
 echo "  reset: $R"
