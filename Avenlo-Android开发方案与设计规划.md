@@ -561,3 +561,11 @@ commit 9f2d9a3。App 全部 8 屏至此统一为「server 优先 + 断网回落�
 | 2 | 记录 Tab 无 QUEUED 轮询——捕捉提交后记录页不会自动出卡 | RecordsScreen 补 2s 轮询（与 HomeScreen 同款 LaunchedEffect 模式） |
 
 **验证（verify_round15.sh，截图 21/22）**：详情页「相关想法 共3条」→ 点击「清晨的露水」→ 显示 idea_11 **真实卡详情**（AI 摘要「晨间露珠的微观摄影与光影观察」+ 0分22秒 + 延展思路 2 条 + 参考资源），非空态「这条灵感还在整理中」。related 跨卡跳转链路完整闭环。commit 799d62c。
+
+### 8.13 第十六轮实绩：/admin/reset 一键重置（2026-09-21 00:20）✅
+
+**问题**：彩排/演示间数据弄乱（捕捉卡越攒越多、手动灵感集混杂）后只能重启 server 恢复——现场找终端、Ctrl+C、重跑命令太慢。
+
+**修复**：新增 `POST /admin/reset` 端点——锁内清空重建种子态（11 卡 + 4 灵感集），同时清 uploads 音频。实测 12 ideas + 5 collections（含脏数据）→ reset → 11 + 4 全清。文档四处同步（契约/README/彩排清单/真机指南）。commit fc994ab。
+
+**运维价值**：Demo 现场数据污染恢复从「重启 server ~30s」降到「一条 curl 即时」，彩排间反复重演零成本。
