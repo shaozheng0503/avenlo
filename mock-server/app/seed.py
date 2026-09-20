@@ -1,7 +1,11 @@
 """预灌种子数据 —— 文案来自 .fig 源文件提取（方案 1.4.2），演示数据 ≠ 造假"""
 import time
+from datetime import date as _date
 
 NOW = int(time.time() * 1000)
+
+WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+TODAY_CN = f"{_date.today().year}年{_date.today().month}月{_date.today().day}日·{WEEKDAY_CN[_date.today().weekday()]}"
 
 
 def _idea(i, title, summary, tags, hours_ago, duration_ms, related=None, status="ok"):
@@ -69,7 +73,7 @@ COLLECTIONS = [
 ]
 
 DAILY_REVIEW = {
-    "date": "2025年9月29日·周一",
+    "date": TODAY_CN,
     "bestQuote": "真正的放松不是躺平，而是把注意力收回来，转回当下的感受。",
     "bestTags": ["生活", "心情", "旅行"],
     "serendipityDesc": "两个想法在时间与空间上形成了有趣的关联",

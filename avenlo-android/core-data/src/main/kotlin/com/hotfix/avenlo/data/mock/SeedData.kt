@@ -88,7 +88,7 @@ object SeedData {
     )
 
     val dailyReview = DailyReview(
-        date = "2025年9月29日·周一",
+        date = java.text.SimpleDateFormat("yyyy年M月d日·EEE", java.util.Locale.CHINESE).format(java.util.Date()),
         bestIdea = DailyReview.BestIdea(
             quote = "真正的放松不是躺平，而是把注意力收回来，转回当下的感受。",
             tags = listOf("生活", "心情", "旅行"),
