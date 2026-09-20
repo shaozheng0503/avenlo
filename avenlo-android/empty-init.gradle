@@ -1,0 +1,2 @@
+// 空的 init 脚本：覆盖系统级 C:\Program Files\gradle-7.6.1-bin\.gradle\init.gradle
+// （那个脚本对 settings-repos 项目会报 "repository maven added by initialization script"）

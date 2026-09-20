@@ -1,0 +1,28 @@
+# ==== 构建产物 ====
+avenlo-android/.gradle/
+avenlo-android/build/
+avenlo-android/*/build/
+avenlo-android/local.properties
+*.apk
+*.aab
+
+# ==== Python ====
+mock-server/__pycache__/
+mock-server/**/__pycache__/
+mock-server/uploads/
+*.pyc
+.venv/
+
+# ==== IDE / OS ====
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# ==== 原始素材（大文件，不入库；用网盘/微盘共享）====
+figma-assets/
+figma-export/
+图片和附件/
+canvas_decompressed.bin
+*.fig
+*.zip
