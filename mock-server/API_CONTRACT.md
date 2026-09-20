@@ -7,7 +7,7 @@
 
 | Method | Path | 说明 | 状态码 |
 |--------|------|------|--------|
-| POST | `/captures` | 提交捕捉事件 → 返回新卡片 id（模拟 STT+LLM 整理 3s） | 200 |
+| POST | `/captures` | 提交捕捉事件 → 返回新卡片 id（模拟 STT+LLM 整理 3s；processed 后**自动关联既有卡**填 related） | 200 |
 | POST | `/captures/audio` | **音频直传**（multipart `file` 字段）→ 落盘 `uploads/` → 返回 `{audioUrl, size}`；audioUrl 为相对路径填进 capture | 200/415 |
 | GET | `/ideas?query=&tag=&range=` | 卡片列表/搜索（**#2 定稿参数**）range∈all/today/week/favorite | 200 |
 | GET | `/ideas/{id}` | 卡片详情（含 extension 三维度） | 200/404 |
@@ -85,3 +85,11 @@ capture_end ──▶ queued ──▶ ok
 ## 与方案文档的对应
 - 方案 1.5 数据契约 → 本文件扩展定稿
 - 方案 8.1 #2（契约缺 4 字段）→ 已全部补齐：collection_name / references 结构 / 搜索参数 / POST /collections
+
+## 自动关联行为（第二十四轮上线）
+
+新卡 processed 后 server 自动填充 `related`（App 详情页「相关想法」渲染）：
+
+- **mock 模式**：`_MOCK_RELATED` 预置语义映射——5 条 mock 转写各指定语义关联的种子卡，转写含关键句即命中（子串匹配）
+- **真链路**：预留 embedding 相似度替换位（`app/main.py::_match_related`）
+- relation 枚举：`similar_theme`（相似主题）/ `same_collection`（同灵感集）/ `time_space`（时间与空间关联）；App 端 `relationLabel()` 渲染中文文案
