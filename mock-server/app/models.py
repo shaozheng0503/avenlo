@@ -78,9 +78,12 @@ class Collection(BaseModel):
 
 class DailyReview(BaseModel):
     date: str
+    bestIdeaId: str = ""   # 第三十四轮：今日最佳指向真实卡（App 端可跳详情）
     bestQuote: str
     bestTags: list[str]
     serendipityDesc: str
+    pairLeftId: str = ""   # 意外关联左卡 id
+    pairRightId: str = ""  # 意外关联右卡 id
     pairLeft: dict
     pairRight: dict
     directions: list[ExtItem]

@@ -119,11 +119,14 @@ COLLECTIONS = [
 
 DAILY_REVIEW = {
     "date": TODAY_CN,
+    "bestIdeaId": "idea_01",  # 关于旅行的灵感（金句「放松/当下」与慢生活叙事一致）
     "bestQuote": "真正的放松不是躺平，而是把注意力收回来，转回当下的感受。",
     "bestTags": ["生活", "心情", "旅行"],
     "serendipityDesc": "两个想法在时间与空间上形成了有趣的关联",
-    "pairLeft": {"title": "酒店空间", "subtitle": "度假 × 设计语言", "tag": "研究笔记"},
-    "pairRight": {"title": "个人成长", "subtitle": "独处时光 × 自我关照", "tag": "思考片段"},
+    "pairLeftId": "idea_04",   # 城市与人
+    "pairRightId": "idea_05",  # 夜骑的城市观察（同主题「城市观察」互补对）
+    "pairLeft": {"title": "城市与人", "subtitle": "城市废墟 × 纹理光影", "tag": "旅行"},
+    "pairRight": {"title": "夜骑的城市观察", "subtitle": "夜骑 × 街头观察", "tag": "城市"},
     "directions": [
         {"title": "城市中的自愈疗愈空间", "desc": "在高密度城市里创造自然疗愈的角落"},
         {"title": "旅行与工作方式的融合", "desc": "是否可以设计一种新的远程工作场景？"},

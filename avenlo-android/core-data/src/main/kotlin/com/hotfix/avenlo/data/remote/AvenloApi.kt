@@ -52,14 +52,17 @@ class AvenloApi(private val baseUrl: String) {
             bestIdea = com.hotfix.avenlo.domain.model.DailyReview.BestIdea(
                 quote = raw.bestQuote,
                 tags = raw.bestTags,
+                ideaId = raw.bestIdeaId,
             ),
             serendipity = com.hotfix.avenlo.domain.model.DailyReview.Serendipity(
                 desc = raw.serendipityDesc,
                 left = com.hotfix.avenlo.domain.model.DailyReview.Serendipity.PairCard(
                     title = raw.pairLeft.title, subtitle = raw.pairLeft.subtitle, tag = raw.pairLeft.tag,
+                    ideaId = raw.pairLeftId,
                 ),
                 right = com.hotfix.avenlo.domain.model.DailyReview.Serendipity.PairCard(
                     title = raw.pairRight.title, subtitle = raw.pairRight.subtitle, tag = raw.pairRight.tag,
+                    ideaId = raw.pairRightId,
                 ),
             ),
             tomorrowDirections = raw.directions.map {
@@ -129,9 +132,12 @@ class AvenloApi(private val baseUrl: String) {
     @kotlinx.serialization.Serializable
     data class DailyReviewRaw(
         val date: String,
+        val bestIdeaId: String = "",
         val bestQuote: String,
         val bestTags: List<String> = emptyList(),
         val serendipityDesc: String = "",
+        val pairLeftId: String = "",
+        val pairRightId: String = "",
         val pairLeft: PairRaw,
         val pairRight: PairRaw,
         val directions: List<DirRaw> = emptyList(),

@@ -96,11 +96,12 @@ object SeedData {
         bestIdea = DailyReview.BestIdea(
             quote = "真正的放松不是躺平，而是把注意力收回来，转回当下的感受。",
             tags = listOf("生活", "心情", "旅行"),
+            ideaId = "idea_01",  // 关于旅行的灵感（与 server 口径一致）
         ),
         serendipity = DailyReview.Serendipity(
             desc = "两个想法在时间与空间上形成了有趣的关联",
-            left = DailyReview.Serendipity.PairCard("酒店空间", "度假 × 设计语言", "研究笔记"),
-            right = DailyReview.Serendipity.PairCard("个人成长", "独处时光 × 自我关照", "思考片段"),
+            left = DailyReview.Serendipity.PairCard("城市与人", "城市废墟 × 纹理光影", "旅行", ideaId = "idea_04"),
+            right = DailyReview.Serendipity.PairCard("夜骑的城市观察", "夜骑 × 街头观察", "城市", ideaId = "idea_05"),
         ),
         tomorrowDirections = listOf(
             DailyReview.Direction("城市中的自愈疗愈空间", "在高密度城市里创造自然疗愈的角落"),

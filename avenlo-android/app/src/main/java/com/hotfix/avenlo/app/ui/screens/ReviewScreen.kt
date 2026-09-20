@@ -1,6 +1,7 @@
 package com.hotfix.avenlo.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.hotfix.avenlo.app.ServiceLocator
 import com.hotfix.avenlo.app.ui.components.TagChip
+import com.hotfix.avenlo.app.ui.navigation.Routes
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 import com.hotfix.avenlo.app.ui.theme.CardShape
 import com.hotfix.avenlo.data.mock.SeedData
@@ -67,7 +69,8 @@ fun ReviewScreen(nav: NavController) {
         item {
             Text("今日最佳灵感", Modifier.padding(horizontal = 24.dp, vertical = 8.dp), fontSize = AvenloTokens.FontSizeSm, fontWeight = FontWeight.Bold, color = AvenloTokens.TextSecondary)
             Box(
-                Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(200.dp).clip(CardShape),
+                Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(200.dp).clip(CardShape)
+                    .then(if (review.bestIdea.ideaId.isNotEmpty()) Modifier.clickable { nav.navigate(Routes.detail(review.bestIdea.ideaId)) } else Modifier),
             ) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(com.hotfix.avenlo.app.R.drawable.photo_seed_05),
@@ -101,12 +104,12 @@ fun ReviewScreen(nav: NavController) {
                 Modifier.padding(horizontal = 24.dp).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SerendipityCard(review.serendipity.left, Modifier.weight(1f), tone = AvenloTokens.sageTone)
+                SerendipityCard(review.serendipity.left, Modifier.weight(1f), tone = AvenloTokens.sageTone) { nav.navigate(Routes.detail(review.serendipity.left.ideaId)) }
                 // 中间链条
                 Box(Modifier.size(28.dp).align(Alignment.CenterVertically).clip(CircleShape).background(AvenloTokens.Warning), contentAlignment = Alignment.Center) {
                     Text("🔗", fontSize = 12.sp)
                 }
-                SerendipityCard(review.serendipity.right, Modifier.weight(1f), tone = AvenloTokens.blueTone)
+                SerendipityCard(review.serendipity.right, Modifier.weight(1f), tone = AvenloTokens.blueTone) { nav.navigate(Routes.detail(review.serendipity.right.ideaId)) }
             }
         }
 
@@ -165,14 +168,16 @@ private fun SerendipityCard(
     card: com.hotfix.avenlo.domain.model.DailyReview.Serendipity.PairCard,
     modifier: Modifier = Modifier,
     tone: com.hotfix.avenlo.app.ui.theme.AvenloTokens.ToneSet,
+    onOpen: () -> Unit = {},
 ) {
     Column(
-        modifier.fillMaxWidth().clip(CardShape).background(AvenloTokens.Surface),
+        modifier.fillMaxWidth().clip(CardShape).background(AvenloTokens.Surface)
+            .then(if (card.ideaId.isNotEmpty()) Modifier.clickable { onOpen() } else Modifier),
     ) {
         Box(Modifier.fillMaxWidth().height(76.dp)) {
             androidx.compose.foundation.Image(
                 painter = androidx.compose.ui.res.painterResource(
-                    if (card.title == "酒店空间") com.hotfix.avenlo.app.R.drawable.photo_seed_06
+                    if (card.title == "城市与人") com.hotfix.avenlo.app.R.drawable.photo_seed_06
                     else com.hotfix.avenlo.app.R.drawable.photo_seed_07
                 ),
                 contentDescription = card.title,

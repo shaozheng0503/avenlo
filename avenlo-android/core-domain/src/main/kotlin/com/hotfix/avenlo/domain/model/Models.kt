@@ -35,6 +35,7 @@ data class DailyReview(
     data class BestIdea(
         val quote: String,                  // 白色金句
         val tags: List<String>,
+        val ideaId: String = "",            // 第三十四轮：指向真实卡，App 可跳详情
         val coverUrl: String? = null,
     )
 
@@ -49,6 +50,7 @@ data class DailyReview(
             val title: String,
             val subtitle: String,
             val tag: String,
+            val ideaId: String = "",        // 第三十四轮：指向真实卡，App 可跳详情
             val coverUrl: String? = null,
         )
     }
