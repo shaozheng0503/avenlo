@@ -485,3 +485,20 @@ export AVENLO_LLM_MODEL=qwen-plus  # 可选
 - `API_CONTRACT.md` 补 `/pipeline` 端点 + 可插拔配置表
 
 **遗留**：真机端到端（等设备）、导航 #1 队友确认、DashscopeStt 真 key 冒烟、现场防火墙规则（无法本机自测）
+
+### 8.8 第十一轮实绩：App↔Server 全链路打通（2026-09-20 20:35）✅
+
+**模拟器 E2E 首次真实跑通 HTTP 提交链路**——此前所有"通过"的验证实际走的都是断网兜底或本地种子（本地种子与 server 种子恰好同 id 同题，掩盖了 GET 解析失败）。本轮修复三个串联 bug：
+
+| # | Bug | 根因 | 修复 |
+|---|-----|------|------|
+| 1 | POST /captures 报「Kotlin reflection is not available」 | Ktor 2.x 请求侧不自动匹配 Content-Type，`setBody(req)` 无 `contentType(Json)` 时 ContentNegotiation 不接手 | `AvenloApi.submitCapture` 补 `contentType(ContentType.Application.Json)` |
+| 2 | 响应报「CardStatus does not contain element with name 'queued'」 | server 小写 `"ok"/"queued"` vs Kotlin 大写枚举，kotlinx.serialization 大小写敏感；**GET /ideas 解析一直静默失败被 runCatching 吞掉** | `CardStatus` 补 `@SerialName` 小写映射 |
+| 3 | 首页崩溃 `ArrayIndexOutOfBoundsException: index=-2` | `card.id.hashCode()` 可为负，Kotlin `%` 负数返回负索引；server 新卡 `cap_xxxx` id 首次触发（本地 idea_01~08 hash 恰好全正） | `WaveIconTile` 改 `Math.floorMod` |
+
+**E2E 验证链（模拟器 pixel_6 + android-34，10.0.2.2:8000）**：
+冷启动 refresh 拉 server 种子 → 首页 merge（「今天·N条」动态增长）→ 短按 FAB → 轻捏开始 → 录音静默 3s 自动保存 → server 卡数 8→11 → **2s 轮询拉回 server 处理后的完整卡**（标题「（模拟 AI 摘要）…」非「整理中」占位，卡片出现在首页顶部）——**捕捉→上传→AI 整理→回显全闭环**
+
+**配套**：`scripts/verify/` 9 个 adb 验证脚本入库（启动/崩溃/UI dump/网络/E2E 全流程，含设备等待防抖）；commit 15f72ab
+
+**遗留不变**：真机验证（等设备）、导航 #1 队友确认、真 key 冒烟
