@@ -12,7 +12,7 @@ ADB = r"C:\Users\huangshaozheng\AppData\Local\Android\Sdk\platform-tools\adb.exe
 XML = r"C:/Users/huangshaozheng/WorkBuddy/2026-09-20-14-20-48/anker-hackathon/ui_dump_tmp.xml"
 
 
-def bounds_center(pattern):
+def bounds_center_text(pattern):
     with open(XML, encoding="utf-8") as f:
         xml = f.read()
     m = re.search(rf'text="{pattern}"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml)
@@ -21,15 +21,25 @@ def bounds_center(pattern):
     return (int(m.group(1)) + int(m.group(3))) // 2, (int(m.group(2)) + int(m.group(4))) // 2
 
 
+def bounds_center_desc(pattern):
+    """按 content-desc 找（图标类节点无 text）——第三十三轮实锤：
+    启发式「搜索框中心+240」算出的 611,346 与图标真实中心 949,346 差 338px。"""
+    with open(XML, encoding="utf-8") as f:
+        xml = f.read()
+    m = re.search(rf'content-desc="{pattern}"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', xml)
+    if not m:
+        return None
+    return (int(m.group(1)) + int(m.group(3))) // 2, (int(m.group(2)) + int(m.group(4))) // 2
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
     if mode == "search_box":
-        pos = bounds_center("搜索灵感、关键词、标签")
+        pos = bounds_center_text("搜索灵感、关键词、标签")
     elif mode == "collections_icon":
-        c = bounds_center("搜索灵感、关键词、标签")
-        pos = (c[0] + 240, c[1]) if c else None   # 搜索框右侧图标（搜索框宽~400，中心右侧 240）
+        pos = bounds_center_desc("灵感集")   # 按 content-desc 精确定位，弃启发式坐标
     elif mode.startswith("text:"):
-        pos = bounds_center(re.escape(mode[5:]))
+        pos = bounds_center_text(re.escape(mode[5:]))
     else:
         print("usage: tap_node.py search_box|collections_icon|text:xxx"); sys.exit(2)
 

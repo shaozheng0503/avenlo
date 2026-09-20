@@ -44,7 +44,7 @@ sleep 1
 
 echo "=== step1: 冷启动（视频从首页开始） ==="
 "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 2
-"$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+"$ADB" shell "am start -f 0x8000 -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
 sleep 7
 
 echo "=== step2: 开始录屏（分段保护：3 分钟上限） ==="
@@ -111,22 +111,59 @@ fi
 
 echo "=== step7.5: 搜索演示（标签点击 → 真实结果） ==="
 "$ADB" shell "input keyevent 4"; sleep 2
-# 回首页后进搜索屏
+# 回首页后进搜索屏（冷启动归零，规避状态恢复残留）
 "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 1
-"$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+"$ADB" shell "am start -f 0x8000 -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
 sleep 6
-"$ADB" shell "input tap 135 310"; sleep 3
+# 搜索框坐标自适应（第三十三轮：硬编码 135,310 已失效）
 dump_to_tmp
-TAG=$(find_tap "
-for m in re.finditer(r'text=\"#摄影\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
-    x1,y1,x2,y2 = map(int, m.groups())
-    print(f'{(x1+x2)//2} {(y1+y2)//2}')
-    break
-")
+SB=$(python "$PROJ/scripts/verify/tap_node.py" search_box)
+echo "  search_box: $SB"
+case "$SB" in TAPPED*) ;; *) echo "  WARN: 搜索框定位失败";; esac
+sleep 2
+# 处理残留查询
+dump_to_tmp
+if grep -q 'text="清空"' "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
+  CL=$(python "$PROJ/scripts/verify/tap_node.py" "text:清空")
+  echo "  cleared: $CL"
+  sleep 1
+fi
+dump_to_tmp
+TAG=$(python "$PROJ/scripts/verify/tap_node.py" "text:#摄影")
 if [ -n "$TAG" ]; then
-  "$ADB" shell "input tap $TAG"; sleep 3
-  echo "  搜索结果已展示（找到 3 条）"
+  echo "  tag: $TAG"
   sleep 3
+else
+  echo "  WARN: #摄影 标签未定位"
+fi
+
+echo "=== step7.6: 灵感集内页演示（第三十三轮新功能） ==="
+# CLEAR_TASK 冷启动 + 轮询等首页真正渲染（am start TotalTime ~7s，固定 sleep 6 不够）
+for TRY in 1 2 3; do
+  "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 1
+  "$ADB" shell "am start -f 0x8000 -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+  for i in 1 2 3 4 5 6; do  # 最多再等 30s，每 5s 查一次
+    sleep 5
+    dump_to_tmp
+    if grep -q '搜索灵感、关键词、标签\|Hey, Runel' "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
+      echo "  首页就绪（第${TRY}轮·${i}x5s）"; break 2
+    fi
+  done
+  echo "  首页未就绪，重试（第${TRY}轮）"
+done
+# tap 前再 dump 一次（拿到的是「当前屏」坐标，防上一轮 dump 过期）
+dump_to_tmp
+CI=$(python "$PROJ/scripts/verify/tap_node.py" collections_icon)
+echo "  collections_icon: $CI"
+sleep 3
+# 点第一张灵感集卡（「旅行灵感」或按 bounds 找含"灵感集"字样的卡片）
+dump_to_tmp
+COL=$(python "$PROJ/scripts/verify/tap_node.py" "text:旅行灵感")
+if [ -n "$COL" ]; then
+  echo "  collection: $COL"
+  sleep 6  # 内页停留：顶栏 + N条 + 卡片列表
+else
+  echo "  WARN: 灵感集卡片未定位"
 fi
 
 echo "=== step8: 停止录屏并拉取 ==="

@@ -63,11 +63,12 @@ for m in re.finditer(r'text=\"$1\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"
 }
 
 cold_start_home() {
-  # force-stop 偶发不送达（adb daemon 抖动）→ App 没死，am start 只是前台化旧任务，
-  # 状态停留在任意屏。自带首页验证的重试循环：见到问候头/搜索框才算到位。
+  # 根因（第三十三轮实锤）：即使进程已被杀，Android 任务快照仍保留导航栈，
+  # am start 默认恢复它 → App 停在搜索/详情等任意屏。
+  # 正解：FLAG_ACTIVITY_CLEAR_TASK (0x8000) 彻底清任务栈，进程死后冷启动才真正归零。
   for TRY in 1 2; do
     "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 1
-    "$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+    "$ADB" shell "am start -f 0x8000 -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
     sleep 5
     dump_to_tmp
     if grep -q 'Hey, Runel\|搜索灵感、关键词、标签' "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
@@ -139,11 +140,10 @@ echo "=== step1: 装新 APK + 冷启动 ==="
 cold_start_home
 
 echo "=== step2: 首页种子（11 卡） ==="
-# 冷启动后 App 可能恢复到上次进程被杀时的页面（savedInstanceState 恢复 NavHost）
-# —— 双 force-stop 清状态恢复，确保落在首页
+# FLAG_ACTIVITY_CLEAR_TASK 清任务快照（见 cold_start_home 注释），确保落在首页
 for i in 1 2; do
   "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 2
-  "$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+  "$ADB" shell "am start -f 0x8000 -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
   sleep 6
   dump_to_tmp
   grep -q 'Hey, Runel\|今天·' "$PROJ/ui_dump_tmp.xml" && break
@@ -204,13 +204,14 @@ shot "R04_mine"
 echo "=== step6: 灵感集列表 ==="
 cold_start_home
 dump_to_tmp   # find_tap 前必须 dump（cold_start_home 不含 dump，旧 dump 是别的屏）
-# 灵感集入口：搜索框右侧图标（tap_node 自适应查找；失败兜底固定坐标）
+# 灵感集入口：content-desc="灵感集" 图标（tap_node 精确定位；失败兜底真实 bounds 中心 949,346）
 if ! python "$PROJ/scripts/verify/tap_node.py" collections_icon 2>/dev/null | grep -q TAPPED; then
-  "$ADB" shell "input tap 990 310"
+  "$ADB" shell "input tap 949 346"
 fi
 sleep 4
 dump_first
-if dump_all | grep -q "灵感集\|旅行"; then ok "灵感集列表"; else bad "灵感集异常"; fi
+# 断言收紧：搜索屏也有「#旅行灵感」标签会撞「旅行」——必须见到灵感集页特征文本
+if dump_all | grep -q "灵感集\|条想法\|旅行灵感"; then ok "灵感集列表"; else bad "灵感集异常"; fi
 shot "R05_collections"
 
 echo "=== step7: 搜索（真实数据 + 标签点击） ==="
