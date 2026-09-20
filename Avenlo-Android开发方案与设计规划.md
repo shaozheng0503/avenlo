@@ -520,3 +520,22 @@ export AVENLO_LLM_MODEL=qwen-plus  # 可选
 **Demo 数据已重置**：server 种子态 8 ideas/4 collections，测试音频清空。正式 Demo 直接可跑。
 
 **遗留**：真机验证、导航 #1 队友确认、真 key 冒烟（三者在「等外部输入」清单）。
+
+### 8.10 第十三轮实绩：全屏接入真实数据源（2026-09-20 22:20）✅
+
+**数据源断层清零**——盘点发现 8 屏中只有首页接了 server，其余屏在吃本地种子。本轮四处修复：
+
+| # | 屏 | 原状 | 修复 |
+|---|----|------|------|
+| 1 | 搜索 | 纯静态 UI（搜索框是 Text 装饰） | 真实 TextField + 内存过滤（title/summary/tags）+ 筛选 pill + 空态 + 点击进详情 |
+| 2 | 今日回顾 | `SeedData.dailyReview` | 接 `/review/today`（扁平→嵌套结构映射在 API 层）|
+| 3 | 灵感集 | `SeedData.collections` | 接 `/collections`；**修掉 Tone 枚举大小写坑**（第三处同款问题）|
+| 4 | 详情页 | idea_01 硬编码回退种子（覆盖 server 数据） | server 优先（extension/related 非空直接用），断网才回落 |
+
+**枚举大小写坑已成系统性风险**：CardStatus（上轮）、Tone（本轮）连续两处静默解析失败。规则：**任何进 server 契约的 Kotlin 枚举必须显式 @SerialName**。已全量排查（Models.kt/IdeaCard.kt 无其他枚举遗漏）。
+
+**验证判据升级（防种子巧合假阳性）**：用「server 独有特征」做判定——回顾页日期带年份（本地种子格式无年份）、详情页 related=3 条（种子无）、server 版长摘要。截图 11-16 入库。
+
+**已知限制**：adb 无法注入中文，中文搜索正向匹配留待真机。
+
+commit 9f2d9a3。App 全部 8 屏至此统一为「server 优先 + 断网回落本地种子」双态数据源。
