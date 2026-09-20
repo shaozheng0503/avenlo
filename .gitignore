@@ -26,3 +26,6 @@ figma-export/
 canvas_decompressed.bin
 *.fig
 *.zip
+
+# ==== 验证脚本的临时产物 ====
+ui_dump_tmp.xml
