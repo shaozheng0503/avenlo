@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
@@ -46,24 +47,38 @@ class MockStt:
 
 
 class DashscopeStt:
-    """通义 Paraformer：文件级识别（base64 上传）。Dashboard: https://dashscope.console.aliyun.com"""
+    """通义 Paraformer 录音文件识别（异步提交 + 轮询 + 结果文件下载）。
+
+    ⚠️ 接口限制：file_urls 仅支持**公网可访问 URL**（http/https）。
+    - audioUrl 为 http(s):// 时直接提交；
+    - 本地路径走 data:base64 会被服务端拒绝（保留路径仅为协议演示），
+      真机链路需先把音频放 OSS / 任意公网静态服务。
+    所有阻塞 HTTP 调用经 asyncio.to_thread 下放线程池，避免卡死事件循环。
+    """
 
     def __init__(self, api_key: str):
         self._key = api_key
 
     async def transcribe(self, audio_path: str | None, duration_ms: int) -> str:
-        import base64
+        if not audio_path:
+            raise FileNotFoundError("audio url/path is empty")
+        if audio_path.startswith(("http://", "https://")):
+            file_url = audio_path                       # 公网 URL 直传
+        else:
+            if not os.path.exists(audio_path):
+                raise FileNotFoundError(f"audio file not found: {audio_path}")
+            import base64
+            with open(audio_path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode()
+            file_url = f"data:audio/mp4;base64,{b64}"   # ⚠️ 仅协议演示，服务端会拒
+        task_id = await asyncio.to_thread(self._submit, file_url)
+        return await asyncio.to_thread(self._poll, task_id)
+
+    def _submit(self, file_url: str) -> str:
         import urllib.request
-
-        if not audio_path or not os.path.exists(audio_path):
-            raise FileNotFoundError("audio file not found (真机 Demo 需上传音频或走 OSS)")
-        with open(audio_path, "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-
-        # 通义录音文件识别（异步提交+轮询），此处用同步简化实现
         payload = json.dumps({
             "model": "paraformer-v2",
-            "input": {"file_urls": [f"data:audio/mp4;base64,{b64}"]},
+            "input": {"file_urls": [file_url]},
         }).encode()
         req = urllib.request.Request(
             "https://dashscope.aliyuncs.com/api/v1/services/audio/asr/transcription",
@@ -72,9 +87,11 @@ class DashscopeStt:
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             body = json.loads(resp.read())
-        task_id = body["output"]["task_id"]
+        return body["output"]["task_id"]
 
-        # 轮询结果
+    def _poll(self, task_id: str) -> str:
+        import time
+        import urllib.request
         for _ in range(60):
             r = urllib.request.Request(
                 f"https://dashscope.aliyuncs.com/api/v1/tasks/{task_id}",
@@ -82,14 +99,22 @@ class DashscopeStt:
             )
             with urllib.request.urlopen(r, timeout=15) as resp:
                 t = json.loads(resp.read())
-            if t["output"]["task_status"] == "SUCCEEDED":
-                return t["output"]["results"][0]["transcription_url"]
-            if t["output"]["task_status"] == "FAILED":
+            status = t["output"]["task_status"]
+            if status == "SUCCEEDED":
+                # transcription_url 是**结果文件 URL**，还要再 GET 一次拿 JSON
+                result_url = t["output"]["results"][0]["transcription_url"]
+                return self._fetch_result(result_url)
+            if status == "FAILED":
                 raise RuntimeError(f"dashscope stt failed: {t}")
-            import asyncio
-            await asyncio.sleep(1)
-
+            time.sleep(1)   # 已在 to_thread 线程内，同步 sleep 不影响事件循环
         raise TimeoutError("stt poll timeout")
+
+    def _fetch_result(self, result_url: str) -> str:
+        import urllib.request
+        with urllib.request.urlopen(result_url, timeout=15) as resp:
+            data = json.loads(resp.read())
+        # 结果文件结构：{"transcripts": [{"text": "...", "sentences": [...]}]}
+        return data["transcripts"][0]["text"]
 
 
 # ---------------------------------------------------------------- LlmProvider
@@ -128,14 +153,26 @@ class OpenAICompatibleLlm:
     )
 
     def __init__(self, api_key: str, base_url: str, model: str):
-        import urllib.request
         self._url = f"{base_url.rstrip('/')}/chat/completions"
         self._key = api_key
         self._model = model
 
     async def generate(self, transcript: str) -> CardDraft:
-        import urllib.request
+        content = await asyncio.to_thread(self._chat, transcript)
+        # 剥掉 markdown 代码块围栏（有的模型爱加 ```json）
+        m = re.search(r"\{.*\}", content, re.S)
+        if not m:
+            raise ValueError(f"llm output not json: {content[:200]}")
+        obj = json.loads(m.group(0))
+        return CardDraft(
+            title=str(obj.get("title", ""))[:24] or "新的灵感",
+            summary=str(obj.get("summary", ""))[:120],
+            tags=[str(t) for t in (obj.get("tags") or ["生活"])][:3],
+            transcript=transcript,
+        )
 
+    def _chat(self, transcript: str) -> str:
+        import urllib.request
         payload = json.dumps({
             "model": self._model,
             "messages": [
@@ -153,19 +190,7 @@ class OpenAICompatibleLlm:
         )
         with urllib.request.urlopen(req, timeout=60) as resp:
             body = json.loads(resp.read())
-        content = body["choices"][0]["message"]["content"]
-
-        # 剥掉 markdown 代码块围栏（有的模型爱加 ```json）
-        m = re.search(r"\{.*\}", content, re.S)
-        if not m:
-            raise ValueError(f"llm output not json: {content[:200]}")
-        obj = json.loads(m.group(0))
-        return CardDraft(
-            title=str(obj.get("title", ""))[:24] or "新的灵感",
-            summary=str(obj.get("summary", ""))[:120],
-            tags=[str(t) for t in (obj.get("tags") or ["生活"])][:3],
-            transcript=transcript,
-        )
+        return body["choices"][0]["message"]["content"]
 
 
 # ---------------------------------------------------------------- 工厂 + 入口

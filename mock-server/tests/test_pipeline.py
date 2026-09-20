@@ -12,6 +12,8 @@
 import asyncio
 import os
 import sys
+import threading
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -23,7 +25,41 @@ from app.pipeline import (
 FAKE_URL = "http://127.0.0.1:8099"
 
 
+def start_fake_openai():
+    """拉起假 OpenAI 服务（daemon 线程）。防 8099 被系统代理转发：no_proxy 已在下方设置。"""
+    from tests.fake_openai import app
+    import uvicorn
+    config = uvicorn.Config(app, host="127.0.0.1", port=8099, log_level="error")
+    server = uvicorn.Server(config)
+    threading.Thread(target=server.run, daemon=True).start()
+    return server
+
+
+async def wait_health(url: str, timeout=10):
+    import urllib.request
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with urllib.request.urlopen(f"{url}/health", timeout=2) as r:
+                if r.status == 200:
+                    return True
+        except Exception:
+            await asyncio.sleep(0.3)
+    return False
+
+
 async def main():
+    # 本机代理（127.0.0.1:7897）会把 127.0.0.1:8099 的请求也转发出去导致 502，
+    # 显式豁免 loopback
+    os.environ.setdefault("no_proxy", "127.0.0.1,localhost")
+    os.environ["NO_PROXY"] = os.environ["no_proxy"]
+
+    print("[0] 拉起假 OpenAI 服务 :8099")
+    start_fake_openai()
+    ok = await wait_health(FAKE_URL)
+    assert ok, "fake openai server not up"
+    print("    fake server up")
+
     print("=" * 60)
     print("[1] mock 模式（默认，无任何环境变量）")
     print(f"    stt={type(build_stt()).__name__}  llm={type(build_llm()).__name__}")
