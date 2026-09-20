@@ -12,6 +12,12 @@ import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,14 +26,32 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.hotfix.avenlo.app.ServiceLocator
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 import com.hotfix.avenlo.app.ui.theme.CardShape
 import com.hotfix.avenlo.domain.model.UserProfile
 
-/** S6 我的：头像 + 戒指卡（92% 电量环）+ 统计三格（12/86/5）+ 设置四项 */
+/** S6 我的：头像 + 戒指卡（92% 电量环）+ 统计三格（真实数据）+ 设置四项 */
 @Composable
 fun MineScreen(nav: NavController) {
     val profile = UserProfile()
+    val repo = ServiceLocator.ideaRepo
+    val ideas by repo.observeIdeas().collectAsState(initial = emptyList())
+
+    // 统计三格吃真实数据：灵感数 / 灵感集数（server 或种子）/ 录音总分钟
+    var statsIdeas by remember { mutableStateOf(profile.statsIdeas) }
+    var statsCollections by remember { mutableStateOf(profile.statsCollections) }
+    var statsMinutes by remember { mutableStateOf(profile.statsMinutes) }
+    LaunchedEffect(ideas) {
+        if (ideas.isNotEmpty()) {
+            statsIdeas = ideas.count { it.status != com.hotfix.avenlo.domain.model.CardStatus.DELETED }
+            statsMinutes = (ideas.sumOf { it.durationMs } / 60000).toInt()
+        }
+    }
+    LaunchedEffect(Unit) {
+        ServiceLocator.collectionsRepo.getCollections()
+            .onSuccess { if (it.isNotEmpty()) statsCollections = it.size }
+    }
 
     Column(Modifier.fillMaxSize()) {
         // 头部
@@ -83,11 +107,11 @@ fun MineScreen(nav: NavController) {
                     Modifier.padding(horizontal = 24.dp).fillMaxWidth()
                         .clip(CardShape).background(AvenloTokens.Surface).padding(vertical = 16.dp),
                 ) {
-                    StatCell("💡", "${profile.statsIdeas}", "灵感", Modifier.weight(1f))
+                    StatCell("💡", "$statsIdeas", "灵感", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(32.dp).background(AvenloTokens.Border))
-                    StatCell("🗂", "${profile.statsCollections}", "灵感集", Modifier.weight(1f))
+                    StatCell("🗂", "$statsCollections", "灵感集", Modifier.weight(1f))
                     Box(Modifier.width(1.dp).height(32.dp).background(AvenloTokens.Border))
-                    StatCell("⏱", "${profile.statsMinutes}", "分钟", Modifier.weight(1f))
+                    StatCell("⏱", "$statsMinutes", "分钟", Modifier.weight(1f))
                 }
             }
 

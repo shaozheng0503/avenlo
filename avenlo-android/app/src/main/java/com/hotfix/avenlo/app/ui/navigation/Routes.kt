@@ -9,6 +9,7 @@ object Routes {
     const val SEARCH = "search"
     const val REVIEW = "review"
     const val MINE = "mine"
+    const val RECORDS = "records"
 
     fun detail(ideaId: String) = "detail/$ideaId"
 
@@ -16,11 +17,11 @@ object Routes {
     const val CAPTURE = "capture?autoStart={autoStart}"
     fun capture(autoStart: Boolean = false) = "capture?autoStart=$autoStart"
 
-    /** 底部导航 4 Tab：首页 / 记录 / 统计 / 我的（标签 ⚠️ 源文件损坏，按语义推断） */
+    /** 底部导航 4 Tab：首页 / 记录(S1 时间线) / 统计(S5 今日回顾) / 我的（标签 ⚠️ 源文件损坏，按语义推断） */
     data class Tab(val route: String, val label: String)
     val bottomTabs = listOf(
         Tab(HOME, "首页"),
-        Tab(REVIEW, "记录"),
+        Tab(RECORDS, "记录"),
         Tab(REVIEW, "统计"),
         Tab(MINE, "我的"),
     )

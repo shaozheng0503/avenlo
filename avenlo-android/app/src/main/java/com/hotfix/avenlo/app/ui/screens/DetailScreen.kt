@@ -45,7 +45,31 @@ import com.hotfix.avenlo.domain.model.IdeaCard
 fun DetailScreen(nav: NavController, ideaId: String) {
     val repo = ServiceLocator.ideaRepo
     val ideas by repo.observeIdeas().collectAsState(initial = emptyList())
-    val card = ideas.firstOrNull { it.id == ideaId }?.let { mergeDetail(it) } ?: SeedData.detailOfIdea01
+    val card = ideas.firstOrNull { it.id == ideaId }?.let { mergeDetail(it) }
+
+    if (card == null) {
+        // 悬空引用（如 related 里的 idea_11/12/13 server 未落卡）——空态而非错误兜底
+        Column(Modifier.fillMaxSize()) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = { nav.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = AvenloTokens.TextPrimary)
+                }
+                Text("灵感详情", fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold)
+            }
+            Column(
+                Modifier.fillMaxWidth().padding(vertical = 96.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("这条灵感还在整理中", fontSize = AvenloTokens.FontSizeLg, fontWeight = FontWeight.SemiBold, color = AvenloTokens.TextSecondary)
+                Spacer(Modifier.height(8.dp))
+                Text("相关引用暂未生成完整卡片", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextDisabled)
+            }
+        }
+        return
+    }
 
     LazyColumn(Modifier.fillMaxSize()) {
         // ---- 顶栏 ----

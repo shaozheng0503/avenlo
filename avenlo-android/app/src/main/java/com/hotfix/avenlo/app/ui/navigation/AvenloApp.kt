@@ -29,6 +29,7 @@ import com.hotfix.avenlo.app.ui.screens.CollectionsScreen
 import com.hotfix.avenlo.app.ui.screens.DetailScreen
 import com.hotfix.avenlo.app.ui.screens.HomeScreen
 import com.hotfix.avenlo.app.ui.screens.MineScreen
+import com.hotfix.avenlo.app.ui.screens.RecordsScreen
 import com.hotfix.avenlo.app.ui.screens.ReviewScreen
 import com.hotfix.avenlo.app.ui.screens.SearchScreen
 import com.hotfix.avenlo.app.ui.screens.SplashScreen
@@ -43,7 +44,7 @@ private data class BottomTab(
 
 private val tabs = listOf(
     BottomTab(Routes.HOME, "首页", Icons.Filled.Home),
-    BottomTab(Routes.REVIEW, "记录", Icons.Filled.PlayCircle),
+    BottomTab(Routes.RECORDS, "记录", Icons.Filled.PlayCircle),
     BottomTab(Routes.REVIEW, "统计", Icons.Filled.BarChart),
     BottomTab(Routes.MINE, "我的", Icons.Filled.Person),
 )
@@ -55,7 +56,7 @@ fun AvenloApp() {
     val currentRoute = backStack?.destination?.route
 
     // 顶层 Tab 页集合；详情/搜索/灵感集/捕捉为二级页，无底导
-    val tabRoutes = listOf(Routes.HOME, Routes.REVIEW, Routes.MINE)
+    val tabRoutes = listOf(Routes.HOME, Routes.RECORDS, Routes.REVIEW, Routes.MINE)
     val showBottomBar = currentRoute in tabRoutes
 
     Scaffold(
@@ -102,6 +103,7 @@ fun AvenloApp() {
                 composable(Routes.COLLECTIONS) { CollectionsScreen(navController) }
                 composable(Routes.SEARCH) { SearchScreen(navController) }
                 composable(Routes.REVIEW) { ReviewScreen(navController) }
+                composable(Routes.RECORDS) { RecordsScreen(navController) }
                 composable(Routes.MINE) { MineScreen(navController) }
                 composable(Routes.CAPTURE) { entry ->
                     val autoStart = entry.arguments?.getString("autoStart") == "true"

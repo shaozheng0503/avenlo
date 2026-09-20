@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,9 @@ import com.hotfix.avenlo.data.mock.SeedData
 @Composable
 fun CollectionsScreen(nav: NavController) {
     var collections by remember { mutableStateOf(SeedData.collections) }
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
+    var creating by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         ServiceLocator.collectionsRepo.getCollections()
             .onSuccess { if (it.isNotEmpty()) collections = it }
@@ -54,7 +58,10 @@ fun CollectionsScreen(nav: NavController) {
             }
             // 右上「+」手动新建（阻断项 #2 定稿：POST /collections）
             Box(
-                Modifier.size(36.dp).clip(CircleShape).background(AvenloTokens.Primary).clickable { /* TODO: 新建对话框 */ },
+                Modifier.size(36.dp).clip(CircleShape).background(AvenloTokens.Primary).clickable {
+                    newName = ""
+                    showCreateDialog = true
+                },
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Filled.Add, "新建灵感集", tint = Color.White) }
         }
@@ -123,5 +130,46 @@ fun CollectionsScreen(nav: NavController) {
             Spacer(Modifier.width(6.dp))
             Text("收藏生活中的每一个灵感", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextSecondary)
         }
+    }
+
+    // 新建灵感集对话框（POST /collections，失败静默——Demo 容错）
+    if (showCreateDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { if (!creating) showCreateDialog = false },
+            title = { Text("新建灵感集", fontWeight = FontWeight.Bold) },
+            text = {
+                androidx.compose.material3.OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    singleLine = true,
+                    label = { Text("名称") },
+                    enabled = !creating,
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        if (newName.isNotBlank()) {
+                            creating = true
+                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                ServiceLocator.collectionsRepo.createCollection(newName.trim())
+                                    .onSuccess { col ->
+                                        collections = listOf(col) + collections
+                                        showCreateDialog = false
+                                    }
+                                creating = false
+                            }
+                        }
+                    },
+                    enabled = newName.isNotBlank() && !creating,
+                ) { Text(if (creating) "创建中…" else "创建") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { if (!creating) showCreateDialog = false },
+                    enabled = !creating,
+                ) { Text("取消") }
+            },
+        )
     }
 }
