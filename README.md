@@ -13,7 +13,7 @@ mock-server/             # FastAPI 后端（Idea Card V2.1 契约参考实现）
   app/main.py            #   13 端点 + 捕捉状态机（/admin/reset 一键重置 + 新卡自动关联）
   app/pipeline.py        #   STT/LLM 可插拔（mock / dashscope / openai_compatible）
   tests/                 #   假 OpenAI + 假 Dashscope 四组自测（含自动关联回归）
-scripts/verify/          # 模拟器验证脚本（29 轮迭代，一键回归 13 项）
+scripts/verify/          # 模拟器验证脚本（33 轮迭代，一键回归 13 项）
 emulator-screens/        # 验证截图 + 备份演示视频（demo_backup.mp4）
 30秒Demo分镜脚本.md       # 现场演示分镜（含口播词与彩排清单）
 真机Demo指南.md           # 3 分钟真机跑通指南
@@ -58,6 +58,9 @@ export AVENLO_LLM_MODEL=qwen-plus
 
 新卡 processed 后自动关联既有卡（`related` 字段，App 详情页「相关想法」渲染）；
 mock 模式为预置语义映射，真链路预留 embedding 相似度。详见 `mock-server/API_CONTRACT.md`。
+
+灵感集支持二级页：列表点卡片进 `CollectionDetailScreen`（collectionId 精确匹配 + 语义标签兜底），
+四灵感集均非空（3/5/3/5），徽标 count 与实际条数对齐。
 
 ## 契约
 
