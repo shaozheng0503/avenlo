@@ -569,3 +569,18 @@ commit 9f2d9a3。App 全部 8 屏至此统一为「server 优先 + 断网回落�
 **修复**：新增 `POST /admin/reset` 端点——锁内清空重建种子态（11 卡 + 4 灵感集），同时清 uploads 音频。实测 12 ideas + 5 collections（含脏数据）→ reset → 11 + 4 全清。文档四处同步（契约/README/彩排清单/真机指南）。commit fc994ab。
 
 **运维价值**：Demo 现场数据污染恢复从「重启 server ~30s」降到「一条 curl 即时」，彩排间反复重演零成本。
+
+### 8.14 第十七轮实绩：verify_all.sh 一键全量回归（2026-09-21 01:10）✅
+
+**问题**：分支约定要求「P0 链路改动必须本机过完整 Demo」，但此前验证靠 15+ 个分散脚本手动逐个跑，无统一 PASS/FAIL 结论；且模拟器验证存在时序竞态（dump 空跑、tap 落点漂移、固定 sleep 边界）导致结果不稳定。
+
+**交付**：`scripts/verify/verify_all.sh`——单命令全量回归，11 项检查（server 健康 / 首页种子 / P0 捕捉→出卡全链路 / 记录 Tab / 我的统计 / 灵感集 / 搜索 / 详情 related / related 跳转），PASS/FAIL 汇总 + 失败项清单，起止自动 `/admin/reset` 保证起态一致与结束恢复。
+
+**调试中拆掉的三类坑**（都已写进脚本注释）：
+1. **dump 时序竞态**：冷启动慢于固定 sleep 时 uiautomator dump 空跑 → dump 加 3 次重试
+2. **tap 落点漂移**：滚动惯性中 dump 的 bounds 已过时，tap 落到相邻卡 → tap 后校验落点内容，失败回退重试
+3. **判据假阴性**：新卡 uuid 首位恰为 0 时 `not startswith('idea_0')` 误判为种子卡 → 改 reset 基数对比（确定性判据）
+
+**新发现**：模拟器连续 4 轮回归后进入 dump 间歇失败态（device offline），重启即恢复——回归跑挂时先查设备状态再怀疑代码。
+
+**最终 11/11 全过**（截图 R01-R09）。commit 47311d7。
