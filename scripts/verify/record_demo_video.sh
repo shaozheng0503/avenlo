@@ -166,6 +166,59 @@ else
   echo "  WARN: 灵感集卡片未定位"
 fi
 
+echo "=== step7.7: 今日回顾三跳演示（第三十四轮新功能） ==="
+# 冷启动归零 → 统计 Tab → 今日最佳大卡跳详情 → 返回 → 意外关联左卡跳详情
+"$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 1
+"$ADB" shell "am start -f 0x8000 -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+for i in 1 2 3 4 5 6; do
+  sleep 5
+  dump_to_tmp
+  if grep -q '搜索灵感、关键词、标签\|Hey, Runel' "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then echo "  首页就绪（${i}x5s）"; break; fi
+done
+# 统计 Tab
+TJ=$(python "$PROJ/scripts/verify/tap_node.py" "text:统计")
+echo "  统计tab: $TJ"
+sleep 3
+# 今日最佳大卡（金句区域固定坐标——E2E 已验证 540,679）
+"$ADB" shell "input tap 540 679"
+sleep 5   # 详情停留（AI 摘要 + 相关想法）
+# 返回今日回顾
+"$ADB" shell "input keyevent 4"; sleep 2
+# 滚动到意外关联
+"$ADB" shell "input swipe 540 1600 540 900 400"; sleep 2
+dump_to_tmp
+ZK=$(python "$PROJ/scripts/verify/tap_node.py" "text:城市与人")
+if [ -n "$ZK" ]; then
+  echo "  意外关联左卡: $ZK"
+  sleep 5  # 详情停留
+  "$ADB" shell "input keyevent 4"; sleep 2
+else
+  echo "  WARN: 意外关联左卡未定位"
+fi
+
+echo "=== step7.8: 我的页动线演示（第三十五轮新功能） ==="
+# 冷启动归零 → 我的 Tab → 灵感集统计格 → 灵感集列表
+"$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 1
+"$ADB" shell "am start -f 0x8000 -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+for i in 1 2 3 4 5 6; do
+  sleep 5
+  dump_to_tmp
+  if grep -q '搜索灵感、关键词、标签\|Hey, Runel' "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then echo "  首页就绪（${i}x5s）"; break; fi
+done
+WD=$(python "$PROJ/scripts/verify/tap_node.py" "text:我的")
+echo "  我的tab: $WD"
+sleep 3
+# 滚动到统计三格可见
+"$ADB" shell "input swipe 540 1500 540 1000 300"; sleep 2
+dump_to_tmp
+TG=$(python "$PROJ/scripts/verify/tap_node.py" "text:灵感集")
+if [ -n "$TG" ]; then
+  echo "  灵感集统计格: $TG"
+  sleep 5  # 灵感集列表停留
+else
+  echo "  WARN: 灵感集统计格未定位"
+fi
+
 echo "=== step8: 停止录屏并拉取 ==="
 kill $REC_PID 2>/dev/null
 sleep 3
