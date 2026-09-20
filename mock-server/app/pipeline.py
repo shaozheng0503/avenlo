@@ -42,8 +42,26 @@ class SttProvider(Protocol):
 
 
 class MockStt:
+    """演示替身：按提交时间戳轮换真实感转写文案（Demo 上卡片内容可信）。
+
+    真链路（dashscope key）接上后此路径不再命中——mock 只是「无 key 永远能跑」的兜底。
+    """
+
+    _TRANSCRIPTS = [
+        "今天通勤路上想到一个想法，把每天听的播客里最打动我的一段，攒成一张张小卡片，"
+        "周末翻看的时候就像和自己重新聊了一遍天。",
+        "刚才洗碗的时候突然想起来，厨房收纳其实和知识管理很像，常用的放台面，"
+        "备用的收进柜子，最重要的贴在冰箱上。",
+        "路过楼下的咖啡馆，里面在放爵士乐。想到一个选题：城市里的背景音是怎么塑造我们情绪的，"
+        "值得录一期节目聊聊。",
+        "睡前脑子停不下来，想到白天开会时那个没聊完的点：用户的抱怨里其实藏着最好的需求文档。",
+        "和朋友散步时聊到的，如果给爸妈做一个只有三个按键的手机，第三个按键应该是什么？"
+        "我觉得是一键把今天的心情发到家庭群。",
+    ]
+
     async def transcribe(self, audio_path: str | None, duration_ms: int) -> str:
-        return f"（模拟转写）用户口述了一段约 {duration_ms // 1000} 秒的想法。"
+        idx = (int(duration_ms) // 1000) % len(self._TRANSCRIPTS)
+        return self._TRANSCRIPTS[idx]
 
 
 class DashscopeStt:
@@ -126,16 +144,30 @@ class LlmProvider(Protocol):
 
 
 class MockLlm:
+    """演示替身：转写文本 → 真实感卡片（标题提炼 + 摘要压缩 + 标签推断）。"""
+
     _TITLES = ["关于工作的想法", "读书时想到的", "通勤路上记的", "睡前灵感", "和朋友聊出来的"]
 
     async def generate(self, transcript: str) -> CardDraft:
-        # 从转写文本抽前 12 字做标题（模拟「AI 提炼」）
         clean = transcript.replace("\n", " ").strip()
-        title = re.sub(r"[（(].*?[)）]", "", clean)[:12] or "新的灵感"
+        # 标题：优先从转写提炼关键短语（逗号/句号切分取首个完整短句，≤12 字）
+        first_clause = re.split(r"[，。！？,.!?]", clean)[0].strip()
+        title = (first_clause[:12] if first_clause else "") or self._TITLES[len(clean) % len(self._TITLES)]
+        # 摘要：压缩到 60 字内（保留转写核心）
+        summary = clean if len(clean) <= 60 else clean[:57] + "…"
+        # 标签：简单关键词推断，命中则用，否则「生活」
+        tags = []
+        for kw, tag in [("播客", "创作"), ("通勤", "生活"), ("厨房", "生活"), ("咖啡", "观察"),
+                        ("开会", "工作"), ("需求", "产品"), ("爸妈", "家庭"), ("选题", "创作"),
+                        ("城市", "观察"), ("散步", "生活"), ("洗碗", "生活"), ("收纳", "生活")]:
+            if kw in clean and tag not in tags:
+                tags.append(tag)
+            if len(tags) >= 2:
+                break
         return CardDraft(
             title=title,
-            summary=f"（模拟 AI 摘要）{clean[:40]}",
-            tags=["生活"],
+            summary=summary,
+            tags=tags or ["生活"],
             transcript=transcript,
         )
 

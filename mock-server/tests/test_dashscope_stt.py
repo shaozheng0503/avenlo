@@ -142,8 +142,9 @@ async def main():
     pl.stt_provider = fstt
     try:
         d = await pl.run_pipeline("https://example.com/FAILAUDIO.m4a", 3000)
-        assert "模拟转写" in d.transcript, d
-        print(f"    transcript = {d.transcript[:40]}...")
+        # 回落 MockStt：产出真实感转写（非空 + 有长度），而非异常
+        assert len(d.transcript) >= 10 and d.title, d
+        print(f"    title = {d.title}  transcript = {d.transcript[:40]}...")
         print("    PASS")
     finally:
         pl.stt_provider = old

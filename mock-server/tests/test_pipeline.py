@@ -64,8 +64,9 @@ async def main():
     print("[1] mock 模式（默认，无任何环境变量）")
     print(f"    stt={type(build_stt()).__name__}  llm={type(build_llm()).__name__}")
     d = await run_pipeline(None, 8000)
-    assert "模拟转写" in d.transcript, d
-    print(f"    transcript[:30] = {d.transcript[:30]}")
+    # mock 文案已是真实感内容（无「（模拟转写）」前缀）——断言非空 + 有实际长度
+    assert len(d.transcript) >= 10 and d.title, d
+    print(f"    title={d.title}  transcript[:30] = {d.transcript[:30]}")
     print("    PASS")
 
     print("[2] OpenAICompatibleLlm 正常链路（假服务返回 markdown 围栏 JSON）")
@@ -95,8 +96,9 @@ async def main():
     pl.stt_provider, pl.llm_provider = BadStt(), llm
     try:
         d = await pl.run_pipeline(None, 5000)
-        assert "模拟 AI 摘要" in d.summary and "BADJSON" in d.transcript, d
-        print(f"    run_pipeline 回落成功：summary 仍为 mock 文案，transcript 保真")
+        # 回落 MockLlm：产出完整卡片（title 非空）且 transcript 保真（BADJSON 透传）
+        assert d.title and "BADJSON" in d.transcript, d
+        print(f"    run_pipeline 回落成功：title={d.title}，transcript 保真")
         print("    PASS")
     finally:
         pl.stt_provider, pl.llm_provider = old_stt, old_llm

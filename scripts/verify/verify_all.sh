@@ -148,7 +148,8 @@ if [ -n "$BTN" ]; then
     [ "$NEW" = "1" ] && break
   done
   if [ "$NEW" = "1" ]; then ok "server 落新卡"; else bad "server 无新卡"; fi
-  dump_all | grep -q "整理中\|（模拟 AI 摘要）" && ok "App 拉回 QUEUED/完成卡" || true
+  # App 侧：新卡出现在首页（QUEUED「整理中」或完成态真实标题——mock 文案已真实感化）
+  dump_all | grep -qE "整理中|通勤|洗碗|咖啡馆|爵士|睡前|散步" && ok "App 拉回 QUEUED/完成卡" || true
   shot "R02_capture_result"
 else
   bad "捕捉屏「轻捏开始」按钮缺失"
