@@ -6,17 +6,19 @@
 
 ```
 avenlo-android/          # Android App（Kotlin + Compose，三模块为 KMP 预留）
-  app/                   #   UI：8 屏 + 导航 + 主题 Token + 震动语言
+  app/                   #   UI：9 屏 + 导航 + 主题 Token + 震动语言
   core-domain/           #   纯 Kotlin：IdeaCard V2.1 模型 + 捕捉状态机
   core-data/             #   Ktor API client + 内存态 Repository
 mock-server/             # FastAPI 后端（Idea Card V2.1 契约参考实现）
   app/main.py            #   11 端点 + 捕捉状态机
   app/pipeline.py        #   STT/LLM 可插拔（mock / dashscope / openai_compatible）
-  tests/                 #   假 OpenAI 服务 + pipeline 自测
+  tests/                 #   假 OpenAI + 假 Dashscope 三段式 + pipeline 自测
+scripts/verify/          # 模拟器验证脚本（15 轮回归，截图累计 22 张）
+emulator-screens/        # 验证截图
 30秒Demo分镜脚本.md       # 现场演示分镜（含口播词与彩排清单）
 真机Demo指南.md           # 3 分钟真机跑通指南
 队友确认清单.md           # 待队友确认的设计决策
-Avenlo-Android开发方案与设计规划.md   # 总方案（优先级/排期/风险）
+Avenlo-Android开发方案与设计规划.md   # 总方案（优先级/排期/风险/逐轮实绩）
 ```
 
 ## 快速开始
