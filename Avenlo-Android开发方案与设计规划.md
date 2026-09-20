@@ -594,3 +594,11 @@ commit 9f2d9a3。App 全部 8 屏至此统一为「server 优先 + 断网回落�
 **验证（截图 23/24）**：点「#摄影」→「找到 3 条」+ 三张真实含摄影标签卡（正路径）；点「东东西设计灵感」→「找到 0 条」+ 空态「没有找到相关灵感」（空路径也覆盖）。verify_all.sh step7 同步升级为标签点击断言。commit bb16d6c。
 
 **顺带排障发现**：adb daemon 在 Bash 调用间被沙箱杀——跨调用操作必加设备等待；模拟器连续多轮操作后偶发 device offline，重启恢复。
+
+### 8.16 第十九轮实绩：备份演示视频（2026-09-21 02:05）✅
+
+**问题**：彩排清单里「备份演示视频已录制（现场网络挂了顶上）」是唯一未完成的自主项。
+
+**交付**：`scripts/verify/record_demo_video.sh` + 产物 `emulator-screens/demo_backup.mp4`（101s / 14.8MB）。脚本按 30 秒分镜走完整 P0 链路：重置种子态 → 冷启动（首页问候头+种子卡）→ 长按 FAB（swipe 同点 600ms 模拟）→ 轻捏开始录音 → 静默自动保存 → 回首页 QUEUED → 变完整卡 → 点进详情（AI 摘要+related）。screenrecord 后台起、分段 170s 上限保护、结束 kill + pull。
+
+**注意**：kill screenrecord 后 mp4 的 moov 是补写的，验时长用 ffprobe（自写 mvhd 解析偏移易错）。这轮模拟器环境安静，静默 3s 检测生效（5s 就完成保存）；环境嘈杂时走 60s 上限，录制脚本都有兜底。commit fca68d8。
