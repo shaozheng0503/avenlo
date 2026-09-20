@@ -16,14 +16,17 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +42,7 @@ import com.hotfix.avenlo.app.ui.theme.CardShape
 import com.hotfix.avenlo.app.ui.theme.ThumbShape
 import com.hotfix.avenlo.data.mock.SeedData
 import com.hotfix.avenlo.domain.model.IdeaCard
+import kotlinx.coroutines.launch
 
 /** S2 灵感详情：AI 摘要 → 相关想法横滑 → 延展思路折叠 → 参考资源（纵向长页） */
 @Composable
@@ -46,6 +50,9 @@ fun DetailScreen(nav: NavController, ideaId: String) {
     val repo = ServiceLocator.ideaRepo
     val ideas by repo.observeIdeas().collectAsState(initial = emptyList())
     val card = ideas.firstOrNull { it.id == ideaId }?.let { mergeDetail(it) }
+    val scope = rememberCoroutineScope()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
     if (card == null) {
         // 悬空引用（如 related 里的 idea_11/12/13 server 未落卡）——空态而非错误兜底
@@ -82,9 +89,73 @@ fun DetailScreen(nav: NavController, ideaId: String) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = AvenloTokens.TextPrimary)
                 }
                 Text("灵感详情", fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                IconButton(onClick = { /* TODO: 更多菜单 */ }) {
+                // 待确认卡（识别失败兜底）：一键确认转 ok（契约 POST /ideas/{id}/confirm）
+                if (card.status == com.hotfix.avenlo.domain.model.CardStatus.NEEDS_REVIEW) {
+                    Text(
+                        "待确认",
+                        fontSize = AvenloTokens.FontSizeXs,
+                        color = AvenloTokens.Warning,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(AvenloTokens.Warning.copy(alpha = 0.14f))
+                            .clickable {
+                                scope.launch {
+                                    repo.confirmIdea(ideaId)
+                                }
+                            }
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                }
+                IconButton(onClick = { showMenu = !showMenu }) {
                     Icon(Icons.Filled.MoreHoriz, "更多", tint = AvenloTokens.TextSecondary)
                 }
+            }
+        }
+
+        // ---- 更多菜单（删除入口） ----
+        if (showMenu) {
+            item {
+                Column(
+                    Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+                        .clip(CardShape).background(AvenloTokens.Surface).padding(6.dp),
+                ) {
+                    Text(
+                        "删除这条灵感",
+                        fontSize = AvenloTokens.FontSizeSm,
+                        color = AvenloTokens.Error,
+                        modifier = Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                showMenu = false
+                                showDeleteDialog = true
+                            }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                    )
+                }
+            }
+        }
+
+        // ---- 删除确认对话框 ----
+        if (showDeleteDialog) {
+            item {
+                AlertDialog(
+                    onDismissRequest = { showDeleteDialog = false },
+                    title = { Text("删除这条灵感？") },
+                    text = { Text("删除后可在「最近删除」中保留 30 天（服务端软删）。") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showDeleteDialog = false
+                            scope.launch {
+                                repo.deleteIdea(ideaId)
+                                nav.popBackStack()
+                            }
+                        }) { Text("删除", color = AvenloTokens.Error) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+                    },
+                )
             }
         }
 
