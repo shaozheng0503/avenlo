@@ -63,9 +63,18 @@ for m in re.finditer(r'text=\"$1\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"
 }
 
 cold_start_home() {
-  "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 2
-  "$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
-  sleep 6
+  # force-stop 偶发不送达（adb daemon 抖动）→ App 没死，am start 只是前台化旧任务，
+  # 状态停留在任意屏。自带首页验证的重试循环：见到问候头/搜索框才算到位。
+  for TRY in 1 2; do
+    "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 1
+    "$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+    sleep 5
+    dump_to_tmp
+    if grep -q 'Hey, Runel\|搜索灵感、关键词、标签' "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
+      return 0
+    fi
+  done
+  return 1
 }
 
 scroll_down() { "$ADB" shell "input swipe 540 1800 540 700 300"; sleep 2; }
@@ -88,10 +97,11 @@ open_travel_detail() {  # 点旅行卡并确认进对详情页；成功返回 0
       "$ADB" shell "input tap $TAP"; sleep 3
       dump_to_tmp
       if grep -q '关于旅行的灵感\|慢生活' "$PROJ/ui_dump_tmp.xml"; then return 0; fi
-      # 落偏了（滚动惯性导致 bounds 漂移）→ 回首页重试
-      "$ADB" shell "input keyevent 4"; sleep 2
+      # 落偏了（滚动惯性导致 bounds 漂移）→ 冷启动归零重试（keyevent 4 可能只弹一层且残留状态）
+      cold_start_home
+    else
+      scroll_down
     fi
-    scroll_down
   done
   return 1
 }
@@ -115,14 +125,29 @@ ok "模拟器就绪"
 H=$(curl -s --max-time 5 --noproxy '*' "$SERVER/health")
 if echo "$H" | grep -q '"ok":true'; then ok "server 健康: $H"; else bad "server 不可达: $H"; fi
 echo "=== step0.5: 重置种子态（保证回归起态一致） ==="
-curl -s --noproxy '*' -X POST "$SERVER/admin/reset" > /dev/null
-sleep 1
+RESET_OUT=$(curl -s --noproxy '*' -X POST "$SERVER/admin/reset")
+echo "  reset: $RESET_OUT"
+# reset 后重试确认回到 11 卡（偶发锁竞争时二次 reset 即可）
+RESET_OK=$(server_json "/ideas" "len(d) == 11")
+if [ "$RESET_OK" != "1" ]; then
+  curl -s --noproxy '*' -X POST "$SERVER/admin/reset" > /dev/null; sleep 1
+  echo "  二次 reset 已执行"
+fi
 
 echo "=== step1: 装新 APK + 冷启动 ==="
 "$ADB" install -r "$APK" 2>&1 | tail -1
 cold_start_home
 
 echo "=== step2: 首页种子（11 卡） ==="
+# 冷启动后 App 可能恢复到上次进程被杀时的页面（savedInstanceState 恢复 NavHost）
+# —— 双 force-stop 清状态恢复，确保落在首页
+for i in 1 2; do
+  "$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 2
+  "$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+  sleep 6
+  dump_to_tmp
+  grep -q 'Hey, Runel\|今天·' "$PROJ/ui_dump_tmp.xml" && break
+done
 dump_first
 if dump_all | grep -q "关于旅行的灵感"; then ok "首页显示种子卡（server 数据）"; else bad "首页无种子卡"; fi
 shot "R01_home"
@@ -178,15 +203,32 @@ shot "R04_mine"
 
 echo "=== step6: 灵感集列表 ==="
 cold_start_home
-"$ADB" shell "input tap 990 310"; sleep 4
+dump_to_tmp   # find_tap 前必须 dump（cold_start_home 不含 dump，旧 dump 是别的屏）
+# 灵感集入口：搜索框右侧图标（tap_node 自适应查找；失败兜底固定坐标）
+if ! python "$PROJ/scripts/verify/tap_node.py" collections_icon 2>/dev/null | grep -q TAPPED; then
+  "$ADB" shell "input tap 990 310"
+fi
+sleep 4
 dump_first
 if dump_all | grep -q "灵感集\|旅行"; then ok "灵感集列表"; else bad "灵感集异常"; fi
 shot "R05_collections"
 
 echo "=== step7: 搜索（真实数据 + 标签点击） ==="
 cold_start_home
-"$ADB" shell "input tap 135 310"; sleep 3
+dump_to_tmp   # 同上：先 dump 再找坐标
+if ! python "$PROJ/scripts/verify/tap_node.py" search_box 2>/dev/null | grep -q TAPPED; then
+  "$ADB" shell "input tap 135 310"
+fi
+sleep 3
 dump_to_tmp
+# 搜索框可能有上次查询残留（Activity 状态恢复）→ 点「清空」归零
+CLEAR=$(find_tap "
+for m in re.finditer(r'text=\"清空\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+[ -n "$CLEAR" ] && { "$ADB" shell "input tap $CLEAR"; sleep 2; dump_to_tmp; }
 TAG=$(find_tap "
 for m in re.finditer(r'text=\"#摄影\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
     x1,y1,x2,y2 = map(int, m.groups())
