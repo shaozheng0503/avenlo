@@ -52,7 +52,7 @@ import java.io.File
  * → 再次点击 或 60s 上限 → 提交后端（queued 占位卡已在首页）→ 3s 撤销窗。
  */
 @Composable
-fun CaptureScreen(nav: NavController) {
+fun CaptureScreen(nav: NavController, autoStart: Boolean = false) {
     val context = LocalContext.current
     val haptics = rememberHaptics()
     val scope = rememberCoroutineScope()
@@ -79,6 +79,11 @@ fun CaptureScreen(nav: NavController) {
         val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         if (granted) startRecording(context) { r, f -> recorder = r; audioFile = f; phase = Phase.Recording; haptics(HapticEvent.STARTED) }
         else permLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
+    // 长按 FAB 直达：进屏自动开录（权限已授予时无感；未授予弹窗，拒绝则回落 Ready 态）
+    LaunchedEffect(autoStart) {
+        if (autoStart && phase == Phase.Ready) tryStart()
     }
 
     // ---- 结束并提交（局部函数必须先于调用点声明）----

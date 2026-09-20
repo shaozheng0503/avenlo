@@ -9,9 +9,12 @@ object Routes {
     const val SEARCH = "search"
     const val REVIEW = "review"
     const val MINE = "mine"
-    const val CAPTURE = "capture"
 
     fun detail(ideaId: String) = "detail/$ideaId"
+
+    /** 捕捉屏；autoStart=true 时跳过 Ready 态直接请求权限开录（长按 FAB 直达） */
+    const val CAPTURE = "capture?autoStart={autoStart}"
+    fun capture(autoStart: Boolean = false) = "capture?autoStart=$autoStart"
 
     /** 底部导航 4 Tab：首页 / 记录 / 统计 / 我的（标签 ⚠️ 源文件损坏，按语义推断） */
     data class Tab(val route: String, val label: String)

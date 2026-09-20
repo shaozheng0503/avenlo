@@ -103,7 +103,10 @@ fun AvenloApp() {
                 composable(Routes.SEARCH) { SearchScreen(navController) }
                 composable(Routes.REVIEW) { ReviewScreen(navController) }
                 composable(Routes.MINE) { MineScreen(navController) }
-                composable(Routes.CAPTURE) { CaptureScreen(navController) }
+                composable(Routes.CAPTURE) { entry ->
+                    val autoStart = entry.arguments?.getString("autoStart") == "true"
+                    CaptureScreen(navController, autoStart = autoStart)
+                }
             }
         }
     }
