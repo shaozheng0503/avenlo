@@ -6,10 +6,13 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import java.io.File
 
-/** Avenlo API client —— 契约见 mock-server/openapi（Idea Card V2.1） */
+/** Avenlo API client —— 契约见 mock-server/API_CONTRACT.md（Idea Card V2.1） */
 class AvenloApi(private val baseUrl: String) {
 
     val http: HttpClient = HttpClient(OkHttp) {
@@ -31,11 +34,28 @@ class AvenloApi(private val baseUrl: String) {
 
     suspend fun getIdea(id: String): IdeaCard = http.get("$baseUrl/ideas/$id").body()
 
-    /** POST /captures —— 触发事件（音频由端上直传，Mock 下仅传元数据） */
+    /** POST /captures —— 触发事件。audioUrl 优先传 server 相对路径（先 uploadAudio），本机路径仅 Demo 兜底 */
     suspend fun submitCapture(req: CaptureRequest): CaptureResponse =
         http.post("$baseUrl/captures") {
             setBody(req)
         }.body()
+
+    /** POST /captures/audio —— multipart 音频直传（真机链路：STT 在 server 侧读文件） */
+    suspend fun uploadAudio(file: File): AudioUploadResponse {
+        val bytes = file.readBytes()
+        return http.post("$baseUrl/captures/audio") {
+            setBody(MultiPartFormDataContent(
+                formData {
+                    append(
+                        "file", bytes, Headers.build {
+                            append(HttpHeaders.ContentType, "audio/mp4")
+                            append(HttpHeaders.ContentDisposition, "filename=\"${file.name}\"")
+                        }
+                    )
+                }
+            ))
+        }.body()
+    }
 
     suspend fun confirmIdea(id: String) {
         http.post("$baseUrl/ideas/$id/confirm")
@@ -65,4 +85,7 @@ class AvenloApi(private val baseUrl: String) {
 
     @kotlinx.serialization.Serializable
     data class CaptureResponse(val ideaId: String, val status: String)
+
+    @kotlinx.serialization.Serializable
+    data class AudioUploadResponse(val audioUrl: String, val size: Long)
 }

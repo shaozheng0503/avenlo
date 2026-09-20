@@ -8,6 +8,7 @@
 | Method | Path | 说明 | 状态码 |
 |--------|------|------|--------|
 | POST | `/captures` | 提交捕捉事件 → 返回新卡片 id（模拟 STT+LLM 整理 3s） | 200 |
+| POST | `/captures/audio` | **音频直传**（multipart `file` 字段）→ 落盘 `uploads/` → 返回 `{audioUrl, size}`；audioUrl 为相对路径填进 capture | 200/415 |
 | GET | `/ideas?query=&tag=&range=` | 卡片列表/搜索（**#2 定稿参数**）range∈all/today/week/favorite | 200 |
 | GET | `/ideas/{id}` | 卡片详情（含 extension 三维度） | 200/404 |
 | POST | `/ideas/{id}/confirm` | 待确认 → ok | 200/404 |

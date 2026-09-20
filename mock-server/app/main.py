@@ -13,9 +13,10 @@
 """
 import asyncio
 import copy
+import os
 import uuid
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 
 from .models import (
     CaptureRequest, CaptureResponse, Collection, DailyReview,
@@ -23,6 +24,9 @@ from .models import (
 )
 from . import seed
 from .pipeline import run_pipeline, stt_provider, llm_provider
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(title="Avenlo Mock Server", version="0.1.0")
 
@@ -57,7 +61,11 @@ async def _process(card: dict):
     mock_mode = isinstance(stt_provider, MockStt) and isinstance(llm_provider, MockLlm)
     if mock_mode:
         await asyncio.sleep(PROCESS_DELAY_S)   # 仅 mock 模式补演示延迟；真链路本身有耗时
-    draft = await run_pipeline(card.get("audioUrl"), card.get("durationMs", 0))
+    # audioUrl 是相对路径（uploads/xxx.m4a）→ 转绝对路径给 STT 读
+    audio = card.get("audioUrl")
+    if audio and not os.path.isabs(audio):
+        audio = os.path.join(os.path.dirname(UPLOAD_DIR), audio)
+    draft = await run_pipeline(audio, card.get("durationMs", 0))
     card["title"] = draft.title
     card["summary"] = draft.summary
     card["tags"] = draft.tags
@@ -72,6 +80,20 @@ async def submit_capture(req: CaptureRequest):
         _ideas[card["id"]] = card
     asyncio.create_task(_process(card))
     return CaptureResponse(ideaId=card["id"], status=card["status"])
+
+
+@app.post("/captures/audio")
+async def upload_audio(file: UploadFile = File(...)):
+    """音频直传（真机链路）：multipart 文件 → server 落盘 → 返回相对路径（填进 capture 的 audioUrl）"""
+    ext = os.path.splitext(file.filename or "audio.m4a")[1] or ".m4a"
+    if ext not in {".m4a", ".aac", ".mp3", ".wav", ".ogg"}:
+        raise HTTPException(415, f"unsupported audio type: {ext}")
+    rel = f"uploads/{uuid.uuid4().hex[:12]}{ext}"
+    dst = os.path.join(os.path.dirname(UPLOAD_DIR), rel)
+    with open(dst, "wb") as f:
+        while chunk := await file.read(1 << 16):
+            f.write(chunk)
+    return {"audioUrl": rel, "size": os.path.getsize(dst)}
 
 
 @app.get("/ideas", response_model=list[IdeaCard])

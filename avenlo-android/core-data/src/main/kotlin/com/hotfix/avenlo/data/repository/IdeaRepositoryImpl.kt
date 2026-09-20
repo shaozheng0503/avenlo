@@ -54,13 +54,18 @@ class IdeaRepositoryImpl(
         )
         mutex.withLock { ideas.value = listOf(placeholder) + ideas.value }
 
-        // 2) 提交后端 → 成功后用服务端卡片替换占位卡
+        // 2) 音频直传 server（真机链路：STT 在 server 侧读文件）；失败回落本地路径字符串（同机 Demo 可读）
+        val audioUrl: String? = audioPath?.let { path ->
+            runCatching { api.uploadAudio(java.io.File(path)).audioUrl }.getOrDefault(path)
+        }
+
+        // 3) 提交后端 → 成功后用服务端卡片替换占位卡
         val resp = api.submitCapture(
             AvenloApi.CaptureRequest(
                 ts = System.currentTimeMillis(),
                 durationMs = durationMs,
                 gestures = listOf(AvenloApi.CaptureRequest.Gesture(0, "pinch"), AvenloApi.CaptureRequest.Gesture(durationMs, "pinch")),
-                audioUrl = audioPath,
+                audioUrl = audioUrl,
             )
         )
         val serverCard = api.getIdea(resp.ideaId)
