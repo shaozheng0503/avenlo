@@ -56,7 +56,7 @@ def _new_card(req: CaptureRequest) -> dict:
 
 
 async def _process(card: dict):
-    """后台 AI 四层递进：queued → 走可插拔 pipeline（真 STT/LLM 或 mock）→ ok"""
+    """后台 AI 四层递进：queued → 走可插拔 pipeline（真 STT/LLM 或 mock）→ ok → 自动关联既有卡"""
     from .pipeline import MockLlm, MockStt
     mock_mode = isinstance(stt_provider, MockStt) and isinstance(llm_provider, MockLlm)
     if mock_mode:
@@ -71,6 +71,38 @@ async def _process(card: dict):
     card["tags"] = draft.tags
     card["transcript"] = draft.transcript
     card["status"] = "ok"
+    # 自动关联（叙事核心「旧想法和新想法联系起来了」）：
+    # mock 模式用预置语义映射（诚实可靠）；真链路（LLM）接上后换 embedding 相似度
+    async with _lock:
+        card["related"] = _match_related(card, draft)
+
+
+# 5 条 mock 转写 → 语义关联的种子卡（id, relation）。
+# 映射按内容语义手工校准：播客卡→播客选题；咖啡馆→声音层次/咖啡馆工作；睡前需求→写作素材；家庭群→菜市场观察
+_MOCK_RELATED: dict[str, list[tuple[str, str]]] = {
+    "通勤路上想到一个想法": [("idea_06", "similar_theme"), ("idea_05", "same_collection")],   # 播客→播客选题/夜骑观察
+    "厨房收纳其实和知识管理很像": [("idea_07", "similar_theme"), ("idea_02", "same_collection")],  # 收纳整理→菜市场样本/时间记忆
+    "路过楼下的咖啡馆": [("idea_03", "similar_theme"), ("idea_12", "same_collection")],   # 咖啡馆→声音层次/咖啡馆工作
+    "睡前脑子停不下来": [("idea_02", "similar_theme")],   # 睡前灵感→写作素材（时间与记忆）
+    "给爸妈做一个只有三个按键": [("idea_07", "similar_theme"), ("idea_01", "same_collection")],  # 家庭分享→菜市场人类学/旅行生活
+}
+
+
+def _match_related(card: dict, draft) -> list:
+    """mock 模式：转写含关键句即匹配预置映射（key 是转写中段而非开头，如「今天通勤路上想到一个想法」）；真链路接上后此函数换 embedding 相似度实现。"""
+    for key, pairs in _MOCK_RELATED.items():
+        if key in draft.transcript:
+            related = []
+            for oid, relation in pairs:
+                other = _ideas.get(oid)
+                if other and other.get("status") == "ok":
+                    related.append({
+                        "id": oid, "title": other["title"], "relation": relation,
+                        "durationMs": other.get("durationMs", 0),
+                        "tag": (other["tags"] or [None])[0],
+                    })
+            return related
+    return []
 
 
 @app.post("/captures", response_model=CaptureResponse)
