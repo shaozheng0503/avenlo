@@ -27,6 +27,14 @@ fun RecordsScreen(nav: NavController) {
 
     LaunchedEffect(Unit) { repo.refresh() }
 
+    // 与 HomeScreen 同款：存在 QUEUED 占位卡时每 2s 轮询（否则捕捉后进本页会一直显示「整理中」）
+    LaunchedEffect(ideas.any { it.status == com.hotfix.avenlo.domain.model.CardStatus.QUEUED }) {
+        while (ideas.any { it.status == com.hotfix.avenlo.domain.model.CardStatus.QUEUED }) {
+            kotlinx.coroutines.delay(2000)
+            repo.refresh()
+        }
+    }
+
     // 按自然日分组（降序）
     val grouped = ideas
         .filter { it.status != com.hotfix.avenlo.domain.model.CardStatus.DELETED }
