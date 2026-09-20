@@ -2,6 +2,7 @@ package com.hotfix.avenlo.app.ui.screens
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -27,9 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.hotfix.avenlo.app.ServiceLocator
+import com.hotfix.avenlo.app.ui.navigation.Routes
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 import com.hotfix.avenlo.app.ui.theme.CardShape
 import com.hotfix.avenlo.domain.model.UserProfile
+import kotlinx.coroutines.launch
 
 /** S6 我的：头像 + 戒指卡（92% 电量环）+ 统计三格（真实数据）+ 设置四项 */
 @Composable
@@ -53,6 +56,10 @@ fun MineScreen(nav: NavController) {
             .onSuccess { if (it.isNotEmpty()) statsCollections = it.size }
     }
 
+    val snackbar = androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val onToast: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize()) {
         // 头部
         Row(
@@ -107,11 +114,11 @@ fun MineScreen(nav: NavController) {
                     Modifier.padding(horizontal = 24.dp).fillMaxWidth()
                         .clip(CardShape).background(AvenloTokens.Surface).padding(vertical = 16.dp),
                 ) {
-                    StatCell("💡", "$statsIdeas", "灵感", Modifier.weight(1f))
+                    StatCell("💡", "$statsIdeas", "灵感", Modifier.weight(1f)) { nav.navigate(Routes.RECORDS) }
                     Box(Modifier.width(1.dp).height(32.dp).background(AvenloTokens.Border))
-                    StatCell("🗂", "$statsCollections", "灵感集", Modifier.weight(1f))
+                    StatCell("🗂", "$statsCollections", "灵感集", Modifier.weight(1f)) { nav.navigate(Routes.COLLECTIONS) }
                     Box(Modifier.width(1.dp).height(32.dp).background(AvenloTokens.Border))
-                    StatCell("⏱", "$statsMinutes", "分钟", Modifier.weight(1f))
+                    StatCell("⏱", "$statsMinutes", "分钟", Modifier.weight(1f)) { nav.navigate(Routes.RECORDS) }
                 }
             }
 
@@ -122,20 +129,25 @@ fun MineScreen(nav: NavController) {
                     Modifier.padding(horizontal = 24.dp).fillMaxWidth()
                         .clip(CardShape).background(AvenloTokens.Surface).padding(6.dp),
                 ) {
-                    SettingRow("⏰", "提醒时间", "每日 21:00，回顾你的旅程", AvenloTokens.peachTone.badge)
-                    SettingRow("📤", "导出数据", "导出你的记录与灵感", AvenloTokens.blueTone.badge)
-                    SettingRow("✨", "AI整理偏好", "个性化你的灵感分类方式", AvenloTokens.Primary.copy(alpha = 0.6f))
-                    SettingRow("💬", "帮助与反馈", "我们一直在倾听", AvenloTokens.Success)
+                    SettingRow("⏰", "提醒时间", "每日 21:00，回顾你的旅程", AvenloTokens.peachTone.badge, onToast)
+                    SettingRow("📤", "导出数据", "导出你的记录与灵感", AvenloTokens.blueTone.badge, onToast)
+                    SettingRow("✨", "AI整理偏好", "个性化你的灵感分类方式", AvenloTokens.Primary.copy(alpha = 0.6f), onToast)
+                    SettingRow("💬", "帮助与反馈", "我们一直在倾听", AvenloTokens.Success, onToast)
                 }
                 Spacer(Modifier.height(80.dp))
             }
         }
     }
+    androidx.compose.material3.SnackbarHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
+    }
 }
 
 @Composable
-private fun StatCell(icon: String, value: String, label: String, modifier: Modifier = Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+private fun StatCell(icon: String, value: String, label: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+    Column(
+        modifier.then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(icon, fontSize = 16.sp)
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
@@ -147,9 +159,9 @@ private fun StatCell(icon: String, value: String, label: String, modifier: Modif
 }
 
 @Composable
-private fun SettingRow(icon: String, title: String, sub: String, tone: Color) {
+private fun SettingRow(icon: String, title: String, sub: String, tone: Color, onToast: (String) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(CardShape).clickable { onToast(title + "：正式版提供（Demo 预览）") }.padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
