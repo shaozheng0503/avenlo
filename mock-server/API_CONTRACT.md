@@ -19,6 +19,7 @@
 | GET | `/review/today` | 今日回顾 | 200 |
 | GET | `/health` | 健康检查 | 200 |
 | GET | `/pipeline` | 当前 STT/LLM 供应商（mock / dashscope / openai_compatible，不泄露 key） | 200 |
+| POST | `/admin/reset` | **一键重置种子态**（Demo 现场/彩排间恢复，免重启 server）：清捕捉卡、手动灵感集、uploads 音频 | 200 |
 
 ## STT/LLM 可插拔配置（pipeline.py）
 

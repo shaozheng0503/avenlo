@@ -173,3 +173,26 @@ async def pipeline_status():
         "stt": type(stt_provider).__name__,
         "llm": type(llm_provider).__name__,
     }
+
+
+@app.post("/admin/reset")
+async def admin_reset():
+    """一键重置为种子态（Demo 现场/彩排间快速恢复，免重启 server）
+
+    清除：所有捕捉产生的卡（保留种子 11 张）、手动新建的灵感集、uploads 音频。
+    """
+    async with _lock:
+        _ideas.clear()
+        _ideas.update({c["id"]: copy.deepcopy(c) for c in seed.IDEAS})
+        _collections.clear()
+        _collections.extend(copy.deepcopy(seed.COLLECTIONS))
+    # uploads 音频文件
+    cleared_files = 0
+    for name in os.listdir(UPLOAD_DIR):
+        if name != ".gitkeep":
+            try:
+                os.remove(os.path.join(UPLOAD_DIR, name))
+                cleared_files += 1
+            except OSError:
+                pass
+    return {"ok": True, "ideas": len(_ideas), "collections": len(_collections), "clearedUploads": cleared_files}

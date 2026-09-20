@@ -10,7 +10,7 @@ avenlo-android/          # Android App（Kotlin + Compose，三模块为 KMP 预
   core-domain/           #   纯 Kotlin：IdeaCard V2.1 模型 + 捕捉状态机
   core-data/             #   Ktor API client + 内存态 Repository
 mock-server/             # FastAPI 后端（Idea Card V2.1 契约参考实现）
-  app/main.py            #   11 端点 + 捕捉状态机
+  app/main.py            #   12 端点 + 捕捉状态机（含 /admin/reset 一键重置）
   app/pipeline.py        #   STT/LLM 可插拔（mock / dashscope / openai_compatible）
   tests/                 #   假 OpenAI + 假 Dashscope 三段式 + pipeline 自测
 scripts/verify/          # 模拟器验证脚本（15 轮回归，截图累计 22 张）

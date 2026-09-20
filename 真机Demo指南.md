@@ -49,6 +49,7 @@ adb install -r avenlo-android/app/build/outputs/apk/debug/app-debug.apk
 | 卡片一直「整理中」 | server 没重启或 IP 变了 | 查 `/health`；确认 APK 内 base URL 与当前 IP 一致 |
 | 按钮无反应 | 录音权限被拒 | 系统设置 → 应用 → Avenlo → 权限 → 麦克风 |
 | 静默不自动结束 | 麦克风灵敏度差异 | `CaptureScreen.kt` 搜 `SILENCE_AMP_THRESHOLD`（默认 800）调小 |
+| 数据乱了想重来 | 演示/彩排弄脏了数据 | `curl -X POST http://<电脑IP>:8000/admin/reset` 一键恢复种子态（免重启） |
 
 ## 换网络重建 APK
 
