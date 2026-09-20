@@ -174,18 +174,22 @@ dump_first
 if dump_all | grep -q "灵感集\|旅行"; then ok "灵感集列表"; else bad "灵感集异常"; fi
 shot "R05_collections"
 
-echo "=== step7: 搜索（真实数据） ==="
+echo "=== step7: 搜索（真实数据 + 标签点击） ==="
 cold_start_home
 "$ADB" shell "input tap 135 310"; sleep 3
-"$ADB" shell "input text 'travel_placeholder'"; sleep 1
-# 搜索框输入中文不可靠，清掉重输英文标签
-"$ADB" shell "input keyevent 67" > /dev/null 2>&1
-for i in $(seq 1 24); do "$ADB" shell "input keyevent 67" > /dev/null 2>&1; done
-shot "R06_search_empty"
-cold_start_home
-"$ADB" shell "input tap 135 310"; sleep 3
-dump_first
-ok "搜索屏打开（中文输入 adb 不支持，仅验证打开）"
+dump_to_tmp
+TAG=$(find_tap "
+for m in re.finditer(r'text=\"#摄影\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+if [ -n "$TAG" ]; then
+  "$ADB" shell "input tap $TAG"; sleep 2
+  if dump_all | grep -q "找到"; then ok "搜索屏标签点击触发搜索"; else bad "标签点击未触发搜索"; fi
+else
+  bad "搜索屏「#摄影」标签未找到"
+fi
 shot "R07_search"
 
 echo "=== step8: 详情 + related 跳转 ==="
