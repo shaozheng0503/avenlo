@@ -602,3 +602,15 @@ commit 9f2d9a3。App 全部 8 屏至此统一为「server 优先 + 断网回落�
 **交付**：`scripts/verify/record_demo_video.sh` + 产物 `emulator-screens/demo_backup.mp4`（101s / 14.8MB）。脚本按 30 秒分镜走完整 P0 链路：重置种子态 → 冷启动（首页问候头+种子卡）→ 长按 FAB（swipe 同点 600ms 模拟）→ 轻捏开始录音 → 静默自动保存 → 回首页 QUEUED → 变完整卡 → 点进详情（AI 摘要+related）。screenrecord 后台起、分段 170s 上限保护、结束 kill + pull。
 
 **注意**：kill screenrecord 后 mp4 的 moov 是补写的，验时长用 ffprobe（自写 mvhd 解析偏移易错）。这轮模拟器环境安静，静默 3s 检测生效（5s 就完成保存）；环境嘈杂时走 60s 上限，录制脚本都有兜底。commit fca68d8。
+
+### 8.17 第二十轮实绩：详情页删除链路（2026-09-21 02:30）✅
+
+**问题**：server 的 DELETE /ideas/{id}（软删）、POST confirm、POST feedback 三个端点在 App 侧有 Repository 方法但**无 UI 入口**——顶栏 MoreHoriz 图标是 TODO 空实现。
+
+**修复**：
+1. **删除链路**：顶栏「更多」菜单（MoreHoriz 展开）→「删除这条灵感」→ AlertDialog 确认（提示「最近删除保留 30 天」）→ `repo.deleteIdea` → popBackStack 回列表，observeIdeas 流驱动 UI 同步
+2. **待确认卡**：needs_review 状态卡顶栏显示「待确认」警示胶囊，点击一键 confirm 转 ok（识别失败兜底的 UI 环）
+
+**验证（截图 25-27）**：山野徒步（idea_13）详情 → 更多菜单展开 → 删除对话框 → 确认 → **server 卡数 11 → 10 软删生效** → 回首页「今天·3条」UI 同步。commit 8360549。
+
+**feedback（关联误判反馈）仍无 UI 入口**：related 卡上没有👍👎——属 P2「信任兜底」，demo 不展示，留待后续。
