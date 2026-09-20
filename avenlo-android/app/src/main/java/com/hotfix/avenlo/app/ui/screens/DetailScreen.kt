@@ -179,10 +179,26 @@ fun DetailScreen(nav: NavController, ideaId: String) {
     }
 }
 
-/** 列表态卡片 → 详情态（种子数据里 detailOfIdea01 有完整 extension） */
-private fun mergeDetail(card: IdeaCard): IdeaCard =
-    if (card.id == "idea_01") SeedData.detailOfIdea01.copy(related = card.related.ifEmpty { SeedData.detailOfIdea01.related })
-    else card.copy(summary = card.summary, extension = defaultExtension(card))
+/** 列表态卡片 → 详情态：server 数据优先（有 extension/related 直接用）；
+ *  本地占位卡（无网络提交的 local_ 前缀 id）或字段为空时回落种子延展数据 */
+private fun mergeDetail(card: IdeaCard): IdeaCard {
+    if (card.id == "idea_01") {
+        // server 版 idea_01 自带完整 extension + related（seed.py 定义）
+        val hasServerData = card.extension.perspectives.isNotEmpty() || card.related.isNotEmpty()
+        return if (hasServerData) {
+            card.copy(related = card.related.ifEmpty { SeedData.detailOfIdea01.related })
+        } else {
+            // 断网兜底：本地种子的 idea_01 没带 extension
+            SeedData.detailOfIdea01.copy(related = card.related.ifEmpty { SeedData.detailOfIdea01.related })
+        }
+    }
+    // 非种子卡：server 未产出 extension 时生成默认延展（新捕捉卡 pipeline 只填 title/summary/tags）
+    return if (card.extension.perspectives.isEmpty() && card.extension.directions.isEmpty()) {
+        card.copy(extension = defaultExtension(card))
+    } else {
+        card
+    }
+}
 
 private fun defaultExtension(card: IdeaCard) = IdeaCard.Extension(
     perspectives = listOf(

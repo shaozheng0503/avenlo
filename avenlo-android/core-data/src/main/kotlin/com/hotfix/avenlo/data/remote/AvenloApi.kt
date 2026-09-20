@@ -34,6 +34,40 @@ class AvenloApi(private val baseUrl: String) {
 
     suspend fun getIdea(id: String): IdeaCard = http.get("$baseUrl/ideas/$id").body()
 
+    /** GET /collections —— 灵感集列表 */
+    suspend fun listCollections(): List<com.hotfix.avenlo.domain.model.Collection> =
+        http.get("$baseUrl/collections").body()
+
+    /** POST /collections?name= —— 手动新建灵感集 */
+    suspend fun createCollection(name: String): com.hotfix.avenlo.domain.model.Collection =
+        http.post("$baseUrl/collections") {
+            parameter("name", name)
+        }.body()
+
+    /** GET /review/today —— server 扁平结构 → App 嵌套模型映射 */
+    suspend fun getDailyReview(): com.hotfix.avenlo.domain.model.DailyReview {
+        val raw: DailyReviewRaw = http.get("$baseUrl/review/today").body()
+        return com.hotfix.avenlo.domain.model.DailyReview(
+            date = raw.date,
+            bestIdea = com.hotfix.avenlo.domain.model.DailyReview.BestIdea(
+                quote = raw.bestQuote,
+                tags = raw.bestTags,
+            ),
+            serendipity = com.hotfix.avenlo.domain.model.DailyReview.Serendipity(
+                desc = raw.serendipityDesc,
+                left = com.hotfix.avenlo.domain.model.DailyReview.Serendipity.PairCard(
+                    title = raw.pairLeft.title, subtitle = raw.pairLeft.subtitle, tag = raw.pairLeft.tag,
+                ),
+                right = com.hotfix.avenlo.domain.model.DailyReview.Serendipity.PairCard(
+                    title = raw.pairRight.title, subtitle = raw.pairRight.subtitle, tag = raw.pairRight.tag,
+                ),
+            ),
+            tomorrowDirections = raw.directions.map {
+                com.hotfix.avenlo.domain.model.DailyReview.Direction(it.title, it.desc)
+            },
+        )
+    }
+
     /** POST /captures —— 触发事件。audioUrl 优先传 server 相对路径（先 uploadAudio），本机路径仅 Demo 兜底 */
     suspend fun submitCapture(req: CaptureRequest): CaptureResponse =
         http.post("$baseUrl/captures") {
@@ -90,4 +124,22 @@ class AvenloApi(private val baseUrl: String) {
 
     @kotlinx.serialization.Serializable
     data class AudioUploadResponse(val audioUrl: String, val size: Long)
+
+    /** /review/today 的 server 原始扁平结构 */
+    @kotlinx.serialization.Serializable
+    data class DailyReviewRaw(
+        val date: String,
+        val bestQuote: String,
+        val bestTags: List<String> = emptyList(),
+        val serendipityDesc: String = "",
+        val pairLeft: PairRaw,
+        val pairRight: PairRaw,
+        val directions: List<DirRaw> = emptyList(),
+    ) {
+        @kotlinx.serialization.Serializable
+        data class PairRaw(val title: String, val subtitle: String = "", val tag: String = "")
+
+        @kotlinx.serialization.Serializable
+        data class DirRaw(val title: String, val desc: String = "")
+    }
 }

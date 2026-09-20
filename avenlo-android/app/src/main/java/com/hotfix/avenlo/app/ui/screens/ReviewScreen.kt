@@ -18,6 +18,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,15 +32,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.hotfix.avenlo.app.ServiceLocator
 import com.hotfix.avenlo.app.ui.components.TagChip
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 import com.hotfix.avenlo.app.ui.theme.CardShape
 import com.hotfix.avenlo.data.mock.SeedData
 
-/** S5 今日回顾：今日最佳 → 意外关联（评审记忆点）→ 明日待延展 → 睡前提醒 */
+/** S5 今日回顾：今日最佳 → 意外关联（评审记忆点）→ 明日待延展 → 睡前提醒；server 优先断网回落种子 */
 @Composable
 fun ReviewScreen(nav: NavController) {
-    val review = SeedData.dailyReview
+    var review by remember { mutableStateOf(SeedData.dailyReview) }
+    LaunchedEffect(Unit) {
+        ServiceLocator.reviewRepo.getDailyReview()
+            .onSuccess { review = it }
+    }
     var remindOn by remember { mutableStateOf(true) }
 
     LazyColumn(Modifier.fillMaxSize()) {

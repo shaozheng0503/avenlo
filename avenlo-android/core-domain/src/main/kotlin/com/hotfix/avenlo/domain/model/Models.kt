@@ -14,7 +14,13 @@ data class Collection(
     val tone: Tone = Tone.SAGE,
     val manual: Boolean = false,   // true = 用户手动新建（右上「+」）
 ) {
-    enum class Tone { SAGE, PEACH, GOLD, BLUE }
+    @kotlinx.serialization.Serializable
+    enum class Tone {
+        @kotlinx.serialization.SerialName("sage") SAGE,
+        @kotlinx.serialization.SerialName("peach") PEACH,
+        @kotlinx.serialization.SerialName("gold") GOLD,
+        @kotlinx.serialization.SerialName("blue") BLUE,
+    }
 }
 
 /** 今日回顾（S5）—— Demo 叙事收尾页 */

@@ -15,6 +15,11 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,11 +30,17 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 import com.hotfix.avenlo.app.ui.theme.CardShape
+import com.hotfix.avenlo.app.ServiceLocator
 import com.hotfix.avenlo.data.mock.SeedData
 
-/** S3 灵感集：2×2 网格（浅主题色底 + 彩色圆形计数徽标 + 照片下半部 + 白圆箭头）+「+」新建 */
+/** S3 灵感集：2×2 网格（浅主题色底 + 彩色圆形计数徽标 + 照片下半部 + 白圆箭头）+「+」新建；server 优先断网回落种子 */
 @Composable
 fun CollectionsScreen(nav: NavController) {
+    var collections by remember { mutableStateOf(SeedData.collections) }
+    LaunchedEffect(Unit) {
+        ServiceLocator.collectionsRepo.getCollections()
+            .onSuccess { if (it.isNotEmpty()) collections = it }
+    }
     Column(Modifier.fillMaxSize()) {
         // 页头（顶级页：无返回箭头）
         Row(
@@ -55,7 +66,7 @@ fun CollectionsScreen(nav: NavController) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.weight(1f),
         ) {
-            items(SeedData.collections, key = { it.id }) { col ->
+            items(collections, key = { it.id }) { col ->
                 val tone = when (col.tone) {
                     com.hotfix.avenlo.domain.model.Collection.Tone.SAGE -> AvenloTokens.sageTone
                     com.hotfix.avenlo.domain.model.Collection.Tone.PEACH -> AvenloTokens.peachTone
@@ -67,7 +78,7 @@ fun CollectionsScreen(nav: NavController) {
                     com.hotfix.avenlo.app.R.drawable.photo_seed_02,
                     com.hotfix.avenlo.app.R.drawable.photo_seed_03,
                     com.hotfix.avenlo.app.R.drawable.photo_seed_04,
-                )[SeedData.collections.indexOf(col) % 4]
+                )[collections.indexOf(col) % 4]
                 Box(Modifier.height(160.dp).clip(CardShape).background(AvenloTokens.Surface)) {
                     Column {
                         // 上半部：浅主题色底 + 主题名 + 副题
