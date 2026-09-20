@@ -195,11 +195,83 @@ dump_first
 if dump_all | grep -qE "月[0-9]+日|记录"; then ok "记录 Tab 显示时间线"; else bad "记录 Tab 异常"; fi
 shot "R03_records"
 
+echo "=== step4.5: 今日回顾三跳（第三十四轮） ==="
+# 统计 Tab → 今日最佳大卡（金句区固定坐标，E2E 验证过）→ 详情 → 返回 → 意外关联左卡 → 详情
+TAP_STAT=$(find_tap "
+for m in re.finditer(r'text=\"统计\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+if [ -n "$TAP_STAT" ]; then
+  "$ADB" shell "input tap $TAP_STAT"; sleep 4
+  dump_to_tmp
+  if grep -q "今日回顾" "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
+    # 跳1：今日最佳大卡 → 详情（金句区域中心）
+    "$ADB" shell "input tap 540 679"; sleep 4
+    dump_to_tmp
+    if grep -q "灵感详情\|AI 摘要" "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
+      ok "今日最佳卡跳详情"
+    else
+      bad "今日最佳卡跳转失败"
+    fi
+    "$ADB" shell "input keyevent 4"; sleep 2
+    # 滚动到意外关联
+    "$ADB" shell "input swipe 540 1600 540 900 400"; sleep 2
+    dump_to_tmp
+    ZK=$(find_tap "
+for m in re.finditer(r'text=\"城市与人\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+    if [ -n "$ZK" ]; then
+      "$ADB" shell "input tap $ZK"; sleep 4
+      dump_to_tmp
+      if grep -q "灵感详情\|AI 摘要" "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
+        ok "意外关联左卡跳详情"
+      else
+        bad "意外关联卡跳转失败"
+      fi
+      "$ADB" shell "input keyevent 4"; sleep 2
+    else
+      bad "意外关联左卡未找到（今日回顾滚动后）"
+    fi
+  else
+    bad "统计 Tab 未进入今日回顾"
+  fi
+else
+  bad "统计 Tab 未定位"
+fi
+
 echo "=== step5: 我的页真实统计 ==="
+cold_start_home
 "$ADB" shell "input tap 945 2300"; sleep 4
 dump_first
 if dump_all | grep -q "灵感"; then ok "我的页显示统计"; else bad "我的页异常"; fi
 shot "R04_mine"
+
+echo "=== step5.5: 我的页统计格跳转（第三十五轮） ==="
+# 滚动到统计三格可见 → 点「灵感集」格 → 应进灵感集列表
+"$ADB" shell "input swipe 540 1500 540 1000 300"; sleep 2
+dump_to_tmp
+TG_CELL=$(find_tap "
+for m in re.finditer(r'text=\"灵感集\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+if [ -n "$TG_CELL" ]; then
+  "$ADB" shell "input tap $TG_CELL"; sleep 4
+  dump_to_tmp
+  if grep -q "AI自动归类的主题" "$PROJ/ui_dump_tmp.xml" 2>/dev/null; then
+    ok "统计格跳灵感集列表"
+  else
+    bad "统计格跳转失败"
+  fi
+else
+  bad "灵感集统计格未找到"
+fi
 
 echo "=== step6: 灵感集列表 ==="
 cold_start_home
