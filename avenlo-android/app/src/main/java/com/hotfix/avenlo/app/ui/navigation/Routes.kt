@@ -6,6 +6,8 @@ object Routes {
     const val HOME = "home"
     const val DETAIL = "detail/{ideaId}"
     const val COLLECTIONS = "collections"
+    const val COLLECTION_DETAIL = "collection/{collectionId}"
+    fun collectionDetail(id: String) = "collection/$id"
     const val SEARCH = "search"
     const val REVIEW = "review"
     const val MINE = "mine"

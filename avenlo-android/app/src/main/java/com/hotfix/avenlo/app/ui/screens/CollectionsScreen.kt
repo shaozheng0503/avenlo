@@ -86,7 +86,9 @@ fun CollectionsScreen(nav: NavController) {
                     com.hotfix.avenlo.app.R.drawable.photo_seed_03,
                     com.hotfix.avenlo.app.R.drawable.photo_seed_04,
                 )[collections.indexOf(col) % 4]
-                Box(Modifier.height(160.dp).clip(CardShape).background(AvenloTokens.Surface)) {
+                Box(Modifier.height(160.dp).clip(CardShape).background(AvenloTokens.Surface).clickable {
+                    nav.navigate(com.hotfix.avenlo.app.ui.navigation.Routes.collectionDetail(col.id))
+                }) {
                     Column {
                         // 上半部：浅主题色底 + 主题名 + 副题
                         Column(

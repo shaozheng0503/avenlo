@@ -25,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hotfix.avenlo.app.ui.screens.CaptureScreen
+import com.hotfix.avenlo.app.ui.screens.CollectionDetailScreen
 import com.hotfix.avenlo.app.ui.screens.CollectionsScreen
 import com.hotfix.avenlo.app.ui.screens.DetailScreen
 import com.hotfix.avenlo.app.ui.screens.HomeScreen
@@ -101,6 +102,10 @@ fun AvenloApp() {
                     DetailScreen(navController, ideaId = id)
                 }
                 composable(Routes.COLLECTIONS) { CollectionsScreen(navController) }
+                composable(Routes.COLLECTION_DETAIL) { entry ->
+                    val id = entry.arguments?.getString("collectionId") ?: "col_01"
+                    CollectionDetailScreen(navController, collectionId = id)
+                }
                 composable(Routes.SEARCH) { SearchScreen(navController) }
                 composable(Routes.REVIEW) { ReviewScreen(navController) }
                 composable(Routes.RECORDS) { RecordsScreen(navController) }

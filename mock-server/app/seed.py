@@ -111,10 +111,10 @@ IDEAS[0]["extension"] = {
 IDEAS[0]["collectionId"] = "col_01"
 
 COLLECTIONS = [
-    {"id": "col_01", "name": "旅行灵感", "subtitle": "关于远方、路上与不同的生活方式", "count": 12, "tone": "sage"},
+    {"id": "col_01", "name": "旅行灵感", "subtitle": "关于远方、路上与不同的生活方式", "count": 3, "tone": "sage"},
     {"id": "col_02", "name": "项目构思", "subtitle": "创意想法与产品方向", "count": 5, "tone": "peach"},
-    {"id": "col_03", "name": "晨间随想", "subtitle": "清晨的灵感与碎片", "count": 15, "tone": "gold"},
-    {"id": "col_04", "name": "阅读笔记", "subtitle": "书籍、文章与知识沉淀", "count": 7, "tone": "blue"},
+    {"id": "col_03", "name": "晨间随想", "subtitle": "清晨的灵感与碎片", "count": 3, "tone": "gold"},
+    {"id": "col_04", "name": "阅读笔记", "subtitle": "书籍、文章与知识沉淀", "count": 5, "tone": "blue"},
 ]
 
 DAILY_REVIEW = {
