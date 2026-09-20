@@ -148,6 +148,14 @@ if [ -n "$BTN" ]; then
     [ "$NEW" = "1" ] && break
   done
   if [ "$NEW" = "1" ]; then ok "server 落新卡"; else bad "server 无新卡"; fi
+  # 自动关联（第二十四轮上线）：新卡 processed 后 related ≥1（5 条 mock 转写均有预置映射，确定性判据）
+  REL=0
+  for i in $(seq 1 8); do
+    sleep 2
+    REL=$(server_json "/ideas" "any(len(c.get('related') or []) >= 1 for c in d if c['id'].startswith('idea_') and len(c['id']) > 10)")
+    [ "$REL" = "1" ] && break
+  done
+  if [ "$REL" = "1" ]; then ok "新卡自动关联 related ≥1"; else bad "新卡 related 为空（关联逻辑回归）"; fi
   # App 侧：新卡出现在首页（QUEUED「整理中」或完成态真实标题——mock 文案已真实感化）
   dump_all | grep -qE "整理中|通勤|洗碗|咖啡馆|爵士|睡前|散步" && ok "App 拉回 QUEUED/完成卡" || true
   shot "R02_capture_result"
