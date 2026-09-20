@@ -539,3 +539,16 @@ export AVENLO_LLM_MODEL=qwen-plus  # 可选
 **已知限制**：adb 无法注入中文，中文搜索正向匹配留待真机。
 
 commit 9f2d9a3。App 全部 8 屏至此统一为「server 优先 + 断网回落本地种子」双态数据源。
+
+### 8.11 第十四轮实绩：四项交互闭环（2026-09-20 22:50）✅
+
+| # | 问题 | 修复 |
+|---|------|------|
+| 1 | **记录 Tab 路由 bug**——与统计 Tab 都指向 REVIEW（复制粘贴错误），显示回顾内容 | 新增 RecordsScreen（S1 时间线：自然日分组 + HomeIdeaCard 复用），RECORDS 路由接线 |
+| 2 | 我的页统计写死 12/86/5 | 接真实数据：灵感数（repo）/ 灵感集数（/collections）/ 录音分钟（durationMs 累计）|
+| 3 | 灵感集「+」是 TODO | AlertDialog 新建 → POST /collections → UI 置顶；实测 server 落卡 manual=True |
+| 4 | 详情页悬空引用兜底显示错误内容（idea_11/12/13 未落卡） | 空态「这条灵感还在整理中」替代 `?: detailOfIdea01` |
+
+模拟器实测截图 17-20；server 已重置种子态。commit 69404e3。
+
+**至此 App 侧可自主闭环的开发项再次清空**。剩余全部依赖外部输入：真机验证、队友确认（导航 #1 标签 + 手势评审 + 记录/统计 Tab 归属）、通义 key。
