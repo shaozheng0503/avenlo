@@ -229,6 +229,8 @@ fun DetailScreen(nav: NavController, ideaId: String) {
                             Spacer(Modifier.height(4.dp))
                             Text(formatDuration(it), fontSize = AvenloTokens.FontSizeXs, color = AvenloTokens.TextDisabled)
                         }
+                        Spacer(Modifier.height(4.dp))
+                        Text(relationLabel(rel.relation), fontSize = AvenloTokens.FontSizeXs, color = toneForRelated(rel.relation))
                     }
                 }
             }
@@ -309,6 +311,14 @@ private fun toneForRelated(relation: String) = when (relation) {
     "same_collection" -> AvenloTokens.Success
     "similar_theme" -> AvenloTokens.Primary
     else -> AvenloTokens.Warning
+}
+
+/** 关联原因文案（与 toneForRelated 同源配色）：让「为什么关联」可解释 */
+private fun relationLabel(relation: String) = when (relation) {
+    "same_collection" -> "同灵感集"
+    "similar_theme" -> "相似主题"
+    "time_space" -> "时间与空间关联"
+    else -> "关联"
 }
 
 /** 延展思路折叠项：数字圆标（绿/金/红轮换）+ 标题 + 展开箭头 + 说明 */
