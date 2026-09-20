@@ -10,11 +10,11 @@ avenlo-android/          # Android App（Kotlin + Compose，三模块为 KMP 预
   core-domain/           #   纯 Kotlin：IdeaCard V2.1 模型 + 捕捉状态机
   core-data/             #   Ktor API client + 内存态 Repository
 mock-server/             # FastAPI 后端（Idea Card V2.1 契约参考实现）
-  app/main.py            #   12 端点 + 捕捉状态机（含 /admin/reset 一键重置）
+  app/main.py            #   13 端点 + 捕捉状态机（/admin/reset 一键重置 + 新卡自动关联）
   app/pipeline.py        #   STT/LLM 可插拔（mock / dashscope / openai_compatible）
-  tests/                 #   假 OpenAI + 假 Dashscope 三段式 + pipeline 自测
-scripts/verify/          # 模拟器验证脚本（15 轮回归，截图累计 22 张）
-emulator-screens/        # 验证截图
+  tests/                 #   假 OpenAI + 假 Dashscope 四组自测（含自动关联回归）
+scripts/verify/          # 模拟器验证脚本（29 轮迭代，一键回归 13 项）
+emulator-screens/        # 验证截图 + 备份演示视频（demo_backup.mp4）
 30秒Demo分镜脚本.md       # 现场演示分镜（含口播词与彩排清单）
 真机Demo指南.md           # 3 分钟真机跑通指南
 队友确认清单.md           # 待队友确认的设计决策
@@ -56,6 +56,9 @@ export AVENLO_LLM_MODEL=qwen-plus
 
 无任何 key 时自动回落 mock，Demo 永远能跑。查当前供应商：`GET /pipeline`。
 
+新卡 processed 后自动关联既有卡（`related` 字段，App 详情页「相关想法」渲染）；
+mock 模式为预置语义映射，真链路预留 embedding 相似度。详见 `mock-server/API_CONTRACT.md`。
+
 ## 契约
 
 `mock-server/API_CONTRACT.md` 是 App ↔ Server 唯一事实源（Idea Card V2.1）。
@@ -65,5 +68,5 @@ OpenAPI 交互文档：server 起来后访问 `/docs`。
 
 - `main` 随时可演示；功能开发拉 `feat/<名字>`，演示验证过才合回
 - P0 链路（捕捉→卡片）改动必须本机过一遍完整 Demo 再合：模拟器 + server 起好后
-  `bash scripts/verify/verify_all.sh`（11 项检查，起止自动重置种子态）
+  `bash scripts/verify/verify_all.sh`（13 项检查，起止自动重置种子态）
 - 回归跑挂先查设备状态：模拟器连续多轮回归后可能进入 offline 态，重启即恢复
