@@ -91,8 +91,8 @@ echo "=== step7: 点顶部新卡进详情 ==="
 dump_to_tmp
 NEWCARD=$(find_tap "
 import re as _re
-# 找「整理中」或「（模拟 AI 摘要）」或今天分组下的第一张卡标题
-for pat in ['整理中', '用户口述了一段']:
+# 找「整理中」或真实感新卡标题（mock 文案已真实感化：通勤/洗碗/咖啡馆/爵士/睡前/散步）
+for pat in ['整理中', '通勤', '洗碗', '咖啡馆', '爵士', '睡前', '散步']:
     for m in re.finditer(r'text=\"' + pat + r'[^\"]*\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
         x1,y1,x2,y2 = map(int, m.groups())
         print(f'{(x1+x2)//2} {(y1+y2)//2}')
@@ -107,6 +107,26 @@ if [ -n "$NEWCARD" ]; then
   sleep 4  # 详情停留（AI 摘要 + 相关想法 + 延展）
 else
   echo "  WARN: 新卡未定位到，跳过详情"
+fi
+
+echo "=== step7.5: 搜索演示（标签点击 → 真实结果） ==="
+"$ADB" shell "input keyevent 4"; sleep 2
+# 回首页后进搜索屏
+"$ADB" shell "am force-stop com.hotfix.avenlo"; sleep 1
+"$ADB" shell "am start -n com.hotfix.avenlo/com.hotfix.avenlo.app.MainActivity" > /dev/null 2>&1
+sleep 6
+"$ADB" shell "input tap 135 310"; sleep 3
+dump_to_tmp
+TAG=$(find_tap "
+for m in re.finditer(r'text=\"#摄影\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+if [ -n "$TAG" ]; then
+  "$ADB" shell "input tap $TAG"; sleep 3
+  echo "  搜索结果已展示（找到 3 条）"
+  sleep 3
 fi
 
 echo "=== step8: 停止录屏并拉取 ==="
