@@ -683,3 +683,9 @@ commit 9f2d9a3。App 全部 8 屏至此统一为「server 优先 + 断网回落�
 - 无 OCR/tesseract 环境下的视频内容验证方法论：server 数据 + 录制脚本 dump 匹配结果 + 同款卡复现渲染，三方证据链替代逐帧 OCR
 
 **分段保护**：录屏上限 170s，脚本全流程约 134s，留有余量。commit 21f0d41。
+
+### 8.23 第二十八轮实绩：关联卡 relation 文案 + 回归断言补强（2026-09-21 00:50）✅
+
+**relation 可解释化**：related 卡此前只把 relation（similar_theme/same_collection）用于配色，用户看不到「为什么关联」。新增 `relationLabel()`——文案与 toneForRelated 同源配色（相似主题=Primary / 同灵感集=Success / 时间与空间关联=Warning）。验证：旅行卡详情「同灵感集」「相似主题」渲染 PASS。commit 4c3ad9b。
+
+**同轮补强**（commit ccc8952）：verify_all step3 新增「新卡自动关联 related ≥1」确定性断言（13/13 全过）；mock-server/README 重写（pipeline 可插拔、自动关联行为、4 组测试入口、App 内存缓存注意）。分镜脚本备份视频信息同步 v3（134s）。commit 3e43d85。
