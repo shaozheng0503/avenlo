@@ -47,6 +47,7 @@ adb install -r avenlo-android/app/build/outputs/apk/debug/app-debug.apk
 |------|------|------|
 | 首页空列表 | 电脑防火墙拦了 8000 端口 | Windows 安全中心 → 防火墙 → 允许 Python/8000 端口入站 |
 | 卡片一直「整理中」 | server 没重启或 IP 变了 | 查 `/health`；确认 APK 内 base URL 与当前 IP 一致 |
+| **断网时捕捉的卡** | server 不可达（WiFi 掉线/防火墙） | 卡以「整理中」占位保留（不丢），但**网络恢复后不会自动补交**（M2 内存态无重试队列）——恢复后删掉占位卡重录，或现场保持 server 可达 |
 | 按钮无反应 | 录音权限被拒 | 系统设置 → 应用 → Avenlo → 权限 → 麦克风 |
 | 静默不自动结束 | 麦克风灵敏度差异 | `CaptureScreen.kt` 搜 `SILENCE_AMP_THRESHOLD`（默认 800）调小 |
 | 数据乱了想重来 | 演示/彩排弄脏了数据 | `curl -X POST http://<电脑IP>:8000/admin/reset` 一键恢复种子态（免重启） |
