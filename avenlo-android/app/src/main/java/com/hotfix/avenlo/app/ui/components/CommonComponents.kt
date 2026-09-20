@@ -1,6 +1,8 @@
 package com.hotfix.avenlo.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -46,9 +48,9 @@ fun WaveIconTile(toneIndex: Int, modifier: Modifier = Modifier, icon: ImageVecto
     }
 }
 
-/** 浅色胶囊标签 chip（马卡龙风：浅底深字） */
+/** 浅色胶囊标签 chip（马卡龙风：浅底深字）；onClick 非空时可点（如搜索屏标签点击触发搜索） */
 @Composable
-fun TagChip(text: String, modifier: Modifier = Modifier, tone: Color? = null) {
+fun TagChip(text: String, modifier: Modifier = Modifier, tone: Color? = null, onClick: (() -> Unit)? = null) {
     val bg = tone?.copy(alpha = 0.16f) ?: AvenloTokens.Primary.copy(alpha = 0.12f)
     val fg = tone ?: AvenloTokens.Primary
     Text(
@@ -57,6 +59,7 @@ fun TagChip(text: String, modifier: Modifier = Modifier, tone: Color? = null) {
         fontSize = 11.sp,
         fontWeight = FontWeight.Medium,
         modifier = modifier
+            .let { m -> if (onClick != null) m.clip(RoundedCornerShape(999.dp)).clickable { onClick() } else m }
             .background(bg, RoundedCornerShape(999.dp))
             .padding(horizontal = 8.dp, vertical = 3.dp),
     )

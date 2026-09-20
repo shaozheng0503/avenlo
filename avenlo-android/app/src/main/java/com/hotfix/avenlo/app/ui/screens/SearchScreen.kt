@@ -132,7 +132,9 @@ fun SearchScreen(nav: NavController) {
             item {
                 Text("常用标签", Modifier.padding(horizontal = 24.dp, vertical = 8.dp), fontSize = AvenloTokens.FontSizeSm, fontWeight = FontWeight.Bold)
                 Row(Modifier.padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SeedHistory.hotTags.forEach { (tag, tone) -> TagChip(tag, tone = tone) }
+                    SeedHistory.hotTags.forEach { (tag, tone) ->
+                        TagChip(tag, tone = tone, onClick = { query = tag.removePrefix("#") })
+                    }
                 }
             }
             // 筛选 pill
@@ -170,7 +172,9 @@ fun SearchScreen(nav: NavController) {
             items(history.value, key = { it.text }) { h ->
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp)
-                        .clip(RoundedCornerShape(10.dp)).background(AvenloTokens.Surface).padding(12.dp),
+                        .clip(RoundedCornerShape(10.dp)).background(AvenloTokens.Surface)
+                        .clickable { query = h.text }
+                        .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(AvenloTokens.Bg))
