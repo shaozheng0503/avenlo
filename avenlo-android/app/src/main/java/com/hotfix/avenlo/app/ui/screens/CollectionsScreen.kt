@@ -3,6 +3,7 @@ package com.hotfix.avenlo.app.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -19,11 +21,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,6 +48,9 @@ fun CollectionsScreen(nav: NavController) {
     var showCreateDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
     var creating by remember { mutableStateOf(false) }
+    // 滚动状态 + 协程（「回到最新」胶囊：滚动列下滚后出现在底栏上方）
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         ServiceLocator.collectionsRepo.getCollections()
             .onSuccess { if (it.isNotEmpty()) collections = it }
@@ -71,7 +78,7 @@ fun CollectionsScreen(nav: NavController) {
         }
 
         // 2×2 网格（固定高度项）+ 最近收录卡：用普通 Column 包 LazyRow 结构外滚动
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Column(Modifier.weight(1f).verticalScroll(scrollState)) {
             // ---- 2×2 网格（非 lazy，固定 2 行 4 个）----
             collections.take(4).chunked(2).forEach { rowCols ->
                 Row(
@@ -120,6 +127,30 @@ fun CollectionsScreen(nav: NavController) {
                 Icon(Icons.Filled.Eco, null, tint = AvenloTokens.Success, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(6.dp))
                 Text("收藏生活中的每一个灵感", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextSecondary)
+            }
+        }
+    }
+
+    // 「回到最新」胶囊（新设计稿 v3 fig 精确数据：灵感集屏底栏上方居中，
+    // 米白底 #F7F5F1 + 深灰字 #4D4B47，188×66px@2x ≈ 94×33dp 内容盒，字 ≈16sp）
+    if (scrollState.value > 120) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            Row(
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .shadow(3.dp, RoundedCornerShape(999.dp))
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color(0xFFF7F5F1))
+                    .clickable { scope.launch { scrollState.animateScrollTo(0) } }
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.KeyboardArrowUp, null,
+                    tint = Color(0xFF4D4B47), modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("回到最新", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color(0xFF4D4B47))
             }
         }
     }
