@@ -45,6 +45,7 @@ import com.hotfix.avenlo.domain.model.IdeaCard
 import kotlinx.coroutines.launch
 
 /** S2 灵感详情：AI 摘要 → 相关想法横滑 → 延展思路折叠 → 参考资源（纵向长页） */
+@androidx.compose.material3.ExperimentalMaterial3Api
 @Composable
 fun DetailScreen(nav: NavController, ideaId: String) {
     val repo = ServiceLocator.ideaRepo
@@ -53,6 +54,10 @@ fun DetailScreen(nav: NavController, ideaId: String) {
     val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    // 第四十一轮：相关想法完整列表弹层 + 参考资源点击反馈（Snackbar，与我的页同模式）
+    var showRelatedSheet by remember { mutableStateOf(false) }
+    val snackbar = androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() }
+    val onToast: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
 
     if (card == null) {
         // 悬空引用（如 related 里的 idea_11/12/13 server 未落卡）——空态而非错误兜底
@@ -78,6 +83,7 @@ fun DetailScreen(nav: NavController, ideaId: String) {
         return
     }
 
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
     LazyColumn(Modifier.fillMaxSize()) {
         // ---- 顶栏 ----
         item {
@@ -187,13 +193,20 @@ fun DetailScreen(nav: NavController, ideaId: String) {
             }
         }
 
-        // ---- 相关想法（横滑）----
+        // ---- 相关想法（横滑）+ 灵感脉络入口（新设计稿）----
         item {
             Spacer(Modifier.height(24.dp))
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("相关想法", fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text("共${card.related.size}条 ›", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextSecondary)
+                // 灵感脉络入口（发现灵感之间的连接与可能）
+                Text(
+                    "灵感脉络 ›", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.Primary, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clickable { nav.navigate(com.hotfix.avenlo.app.ui.navigation.Routes.network(ideaId)) },
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("共${card.related.size}条 ›", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextSecondary,
+                    modifier = Modifier.clickable { showRelatedSheet = true })
             }
             Spacer(Modifier.height(12.dp))
             LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -252,15 +265,17 @@ fun DetailScreen(nav: NavController, ideaId: String) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("参考资源", fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                Text("立即全部 ›", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextSecondary)
+                Text("立即全部 ›", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextSecondary,
+                    modifier = Modifier.clickable { onToast("参考资源：正式版提供（Demo 预览）") })
             }
             Spacer(Modifier.height(12.dp))
             card.extension.references.forEach { ref ->
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).clip(CardShape).background(AvenloTokens.Surface).padding(14.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).clip(CardShape).background(AvenloTokens.Surface)
+                        .clickable { onToast(ref.title + "：正式版打开原文（Demo 预览）") }.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(28.dp).clip(RoundedCornerShape(6.dp)).background(AvenloTokens.blueTone.bg), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(28.dp).clip(RoundedCornerShape(6.dp)).background(AvenloTokens.Bg), contentAlignment = Alignment.Center) {
                         Text("🔗", fontSize = 12.sp)
                     }
                     Spacer(Modifier.width(10.dp))
@@ -274,6 +289,57 @@ fun DetailScreen(nav: NavController, ideaId: String) {
             Spacer(Modifier.height(80.dp))
         }
     }
+
+    // ---- 相关想法完整列表弹层（第四十一轮：「共 N 条 ›」的落地页）----
+    if (showRelatedSheet) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showRelatedSheet = false },
+        ) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("相关想法", fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Text("共${card.related.size}条", fontSize = AvenloTokens.FontSizeSm, color = AvenloTokens.TextSecondary)
+            }
+            Spacer(Modifier.height(10.dp))
+            // 完整列表：图标 + 标题 + 关联原因（比横滑卡多解释文案——评委看到「为什么关联」）
+            card.related.forEach { rel ->
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 6.dp)
+                        .clip(CardShape).background(AvenloTokens.Surface)
+                        .clickable {
+                            showRelatedSheet = false
+                            nav.navigate(com.hotfix.avenlo.app.ui.navigation.Routes.detail(rel.id))
+                        }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    com.hotfix.avenlo.app.ui.components.WaveIconTile(toneIndex = rel.id.hashCode())
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(rel.title, fontSize = AvenloTokens.FontSizeLg, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(3.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                Modifier.clip(RoundedCornerShape(999.dp))
+                                    .background(toneForRelated(rel.relation).copy(alpha = 0.14f))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                            ) { Text(relationLabel(rel.relation), fontSize = 10.sp, color = toneForRelated(rel.relation), fontWeight = FontWeight.Medium) }
+                            rel.tag?.let {
+                                Spacer(Modifier.width(6.dp))
+                                Text("#$it", fontSize = AvenloTokens.FontSizeXs, color = AvenloTokens.TextDisabled)
+                            }
+                        }
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = AvenloTokens.TextDisabled)
+                }
+            }
+            Spacer(Modifier.height(28.dp))   // 底部安全区留白
+        }
+    }
+
+    // Snackbar 挂载（参考资源等点击反馈，与我的页同模式）
+    androidx.compose.material3.SnackbarHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
+    } // end Box
 }
 
 /** 列表态卡片 → 详情态：server 数据优先（有 extension/related 直接用）；

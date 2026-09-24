@@ -104,7 +104,7 @@ object SeedData {
             right = DailyReview.Serendipity.PairCard("夜骑的城市观察", "夜骑 × 街头观察", "城市", ideaId = "idea_05"),
         ),
         tomorrowDirections = listOf(
-            DailyReview.Direction("城市中的自愈疗愈空间", "在高密度城市里创造自然疗愈的角落"),
+            DailyReview.Direction("城市中的自然疗愈空间", "在高密度城市里创造自然疗愈的角落"),
             DailyReview.Direction("旅行与工作方式的融合", "是否可以设计一种新的远程工作场景？"),
         ),
     )

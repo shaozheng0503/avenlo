@@ -39,6 +39,7 @@ import com.hotfix.avenlo.app.ui.navigation.Routes
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 import com.hotfix.avenlo.app.ui.theme.CardShape
 import com.hotfix.avenlo.data.mock.SeedData
+import kotlinx.coroutines.launch
 
 /** S5 今日回顾：今日最佳 → 意外关联（评审记忆点）→ 明日待延展 → 睡前提醒；server 优先断网回落种子 */
 @Composable
@@ -49,7 +50,12 @@ fun ReviewScreen(nav: NavController) {
             .onSuccess { review = it }
     }
     var remindOn by remember { mutableStateOf(true) }
+    // 第四十一轮：明日待延展条目点击反馈（Snackbar，与我的页/详情页同模式）
+    val snackbar = androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val onToast: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
 
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
     LazyColumn(Modifier.fillMaxSize()) {
         // 顶栏
         item {
@@ -125,7 +131,9 @@ fun ReviewScreen(nav: NavController) {
             review.tomorrowDirections.forEachIndexed { i, d ->
                 Row(
                     Modifier.padding(horizontal = 24.dp, vertical = 6.dp).fillMaxWidth()
-                        .clip(CardShape).background(AvenloTokens.Surface).padding(14.dp),
+                        .clip(CardShape).background(AvenloTokens.Surface)
+                        .clickable { onToast(d.title + "：已加入明日待延展（Demo 预览）") }
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.size(24.dp).clip(CircleShape).background(AvenloTokens.Primary), contentAlignment = Alignment.Center) {
@@ -151,7 +159,7 @@ fun ReviewScreen(nav: NavController) {
             ) {
                 Icon(Icons.Filled.NightsStay, null, tint = AvenloTokens.Primary, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
-                Text("每日 21:00 提醒回顾", fontSize = AvenloTokens.FontSizeSm, modifier = Modifier.weight(1f))
+                Text("每晚21:00 点推送", fontSize = AvenloTokens.FontSizeSm, modifier = Modifier.weight(1f))
                 Switch(
                     checked = remindOn,
                     onCheckedChange = { remindOn = it },
@@ -161,6 +169,9 @@ fun ReviewScreen(nav: NavController) {
             Spacer(Modifier.height(80.dp))
         }
     }
+    // Snackbar 挂载（明日待延展点击反馈）
+    androidx.compose.material3.SnackbarHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
+    } // end Box
 }
 
 @Composable

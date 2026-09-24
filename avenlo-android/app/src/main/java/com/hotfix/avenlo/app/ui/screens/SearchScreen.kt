@@ -150,7 +150,7 @@ fun SearchScreen(nav: NavController) {
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(999.dp))
-                                .background(if (selected) AvenloTokens.TextPrimary else AvenloTokens.Surface)
+                                .background(if (selected) AvenloTokens.TextPrimary else AvenloTokens.Bg)
                                 .clickable { filter = i }
                                 .padding(horizontal = 14.dp, vertical = 6.dp),
                         )

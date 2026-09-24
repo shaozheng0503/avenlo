@@ -59,11 +59,11 @@ data class DailyReview(
     data class Direction(val title: String, val desc: String)
 }
 
-/** 我的页（S6）统计与戒指状态 */
+/** 我的页（S6）统计与戒指状态 —— 第五十轮：电量对齐新设计稿「电量82%」 */
 data class UserProfile(
     val name: String = "Runel",
     val slogan: String = "记录，让生活更有方向",
-    val ringBattery: Int = 92,
+    val ringBattery: Int = 82,
     val ringConnected: Boolean = true,
     val statsIdeas: Int = 12,
     val statsCollections: Int = 86,

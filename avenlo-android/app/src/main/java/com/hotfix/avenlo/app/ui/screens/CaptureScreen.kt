@@ -38,11 +38,16 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.hotfix.avenlo.app.ServiceLocator
 import com.hotfix.avenlo.app.haptics.rememberHaptics
+import com.hotfix.avenlo.app.stt.SttEngine
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 import com.hotfix.avenlo.domain.capture.CaptureSpec
 import com.hotfix.avenlo.domain.capture.HapticEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -62,6 +67,12 @@ fun CaptureScreen(nav: NavController, autoStart: Boolean = false) {
     var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
     var audioFile by remember { mutableStateOf<File?>(null) }
     var submittedId by remember { mutableStateOf<String?>(null) }
+
+    // ---- 端侧 STT：进程级单例（第四十九轮修复：引擎不再随屏幕 dispose 释放，
+    // 转写协程改走 App 级作用域，屏幕退出不中断、不崩溃）----
+    var liveText by remember { mutableStateOf("") }        // 「正在聆听」下的实时增量文本
+    var draftText by remember { mutableStateOf<String?>(null) }  // Done 态草稿转写
+    val sttScope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     val pulse = rememberInfiniteTransition(label = "wave").animateFloat(
         initialValue = 0.6f, targetValue = 1f,
@@ -94,6 +105,14 @@ fun CaptureScreen(nav: NavController, autoStart: Boolean = false) {
         haptics(HapticEvent.SAVED)   // 已存下=双震
         val dur = elapsedSec * 1000L
         val path = audioFile?.absolutePath
+        // 端侧草稿转写（sherpa-onnx 单例；失败静默——云端链路照常兜底）
+        // 注意：sttScope 是 App 级作用域，屏幕 popBackStack 后转写继续、结果随 DraftState 落库
+        if (path != null) {
+            sttScope.launch {
+                val full = SttEngine.get().transcribeFile(context, File(path))
+                withContext(Dispatchers.Main) { draftText = full ?: "" }
+            }
+        }
         scope.launch {
             ServiceLocator.ideaRepo.submitCapture(path, dur)
                 .onSuccess {
@@ -182,6 +201,17 @@ fun CaptureScreen(nav: NavController, autoStart: Boolean = false) {
                     Text("正在聆听…", color = Color.White, fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     Text("再次轻捏结束 · 静默 3 秒自动保存", color = Color.White.copy(alpha = 0.6f), fontSize = AvenloTokens.FontSizeSm)
+                    // 端侧 STT 实时预览（模型就绪才有）
+                    if (liveText.isNotBlank()) {
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            liveText,
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = AvenloTokens.FontSizeSm,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                     Spacer(Modifier.height(20.dp))
                     Text(
                         "%d:%02d".format(elapsedSec / 60, elapsedSec % 60),
@@ -205,6 +235,17 @@ fun CaptureScreen(nav: NavController, autoStart: Boolean = false) {
                     Text("灵感已保存", color = AvenloTokens.Success, fontSize = AvenloTokens.FontSizeLg, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     Text("3 秒内可撤销", color = Color.White.copy(alpha = 0.5f), fontSize = AvenloTokens.FontSizeSm)
+                    // 端侧草稿转写（sherpa-onnx；空=引擎未就绪或转写中，云端精修后卡片会替换）
+                    draftText?.let { draft ->
+                        Spacer(Modifier.height(20.dp))
+                        Text(
+                            "本地转写草稿：\n$draft",
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontSize = AvenloTokens.FontSizeSm,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        )
+                    }
                     Spacer(Modifier.height(24.dp))
                     BigButton("撤销这条记录", highlight = false, alpha = 1f) {
                         val id = submittedId

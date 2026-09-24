@@ -15,6 +15,10 @@ android {
         versionName = "0.1.0"
         // Mock Server 地址：模拟器 10.0.2.2 / 真机改局域网 IP（gradle.properties 可覆盖）
         buildConfigField("String", "API_BASE_URL", "\"${project.findProperty("avenlo.api.base") ?: "http://10.0.2.2:8000"}\"")
+        ndk {
+            // sherpa-onnx so 库：arm64 真机 + x86_64 模拟器（验证链路用）
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     buildTypes {
@@ -47,4 +51,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // 端侧 STT：sherpa-onnx（离线语音识别，Apache-2.0，JitPack 分发；v 前缀版本才带 Android AAR）
+    implementation("com.github.k2-fsa:sherpa-onnx:v1.12.29")
 }

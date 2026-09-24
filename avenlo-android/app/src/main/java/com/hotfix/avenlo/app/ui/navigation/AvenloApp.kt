@@ -6,8 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.FolderCopy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -30,13 +29,15 @@ import com.hotfix.avenlo.app.ui.screens.CollectionsScreen
 import com.hotfix.avenlo.app.ui.screens.DetailScreen
 import com.hotfix.avenlo.app.ui.screens.HomeScreen
 import com.hotfix.avenlo.app.ui.screens.MineScreen
+import com.hotfix.avenlo.app.ui.screens.NetworkScreen
 import com.hotfix.avenlo.app.ui.screens.RecordsScreen
 import com.hotfix.avenlo.app.ui.screens.ReviewScreen
 import com.hotfix.avenlo.app.ui.screens.SearchScreen
 import com.hotfix.avenlo.app.ui.screens.SplashScreen
+import com.hotfix.avenlo.app.ui.screens.StatsScreen
 import com.hotfix.avenlo.app.ui.theme.AvenloTokens
 
-/** 底部导航定义：房子/圆点/图表/人像（图标按 .fig 视觉），标签为推断值 */
+/** 底部导航（新设计稿 3 Tab）：房子/灵感集/我的 */
 private data class BottomTab(
     val route: String,
     val label: String,
@@ -45,26 +46,26 @@ private data class BottomTab(
 
 private val tabs = listOf(
     BottomTab(Routes.HOME, "首页", Icons.Filled.Home),
-    BottomTab(Routes.RECORDS, "记录", Icons.Filled.PlayCircle),
-    BottomTab(Routes.REVIEW, "统计", Icons.Filled.BarChart),
+    BottomTab(Routes.COLLECTIONS, "灵感集", Icons.Filled.FolderCopy),
     BottomTab(Routes.MINE, "我的", Icons.Filled.Person),
 )
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun AvenloApp() {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
 
-    // 顶层 Tab 页集合；详情/搜索/灵感集/捕捉为二级页，无底导
-    val tabRoutes = listOf(Routes.HOME, Routes.RECORDS, Routes.REVIEW, Routes.MINE)
+    // 顶层 Tab 页集合（新设计稿 3 Tab）；详情/搜索/记录/捕捉/脉络/今日回顾/统计为二级页，无底导
+    val tabRoutes = listOf(Routes.HOME, Routes.COLLECTIONS, Routes.MINE)
     val showBottomBar = currentRoute in tabRoutes
 
     Scaffold(
         containerColor = AvenloTokens.Bg,
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(containerColor = AvenloTokens.Surface, tonalElevation = 0.dp) {
+                NavigationBar(containerColor = AvenloTokens.Bg, tonalElevation = 0.dp) {
                     tabs.forEach { tab ->
                         NavigationBarItem(
                             selected = currentRoute == tab.route,
@@ -93,8 +94,9 @@ fun AvenloApp() {
         Box(Modifier.fillMaxSize().padding(bottom = if (showBottomBar) padding.calculateBottomPadding() else 0.dp)) {
             NavHost(
                 navController = navController,
-                startDestination = Routes.HOME,
+                startDestination = Routes.SPLASH,
             ) {
+                // 启动先落设计稿的戒指欢迎页（mock3_phone1），「开始记录」进列表首页
                 composable(Routes.SPLASH) { SplashScreen(onStart = { navController.navigate(Routes.HOME) { popUpTo(Routes.SPLASH) { inclusive = true } } }) }
                 composable(Routes.HOME) { HomeScreen(navController) }
                 composable(Routes.DETAIL) { entry ->
@@ -108,6 +110,11 @@ fun AvenloApp() {
                 }
                 composable(Routes.SEARCH) { SearchScreen(navController) }
                 composable(Routes.REVIEW) { ReviewScreen(navController) }
+                composable(Routes.STATS) { StatsScreen(navController) }
+                composable(Routes.NETWORK) { entry ->
+                    val id = entry.arguments?.getString("ideaId") ?: "idea_01"
+                    NetworkScreen(navController, ideaId = id)
+                }
                 composable(Routes.RECORDS) { RecordsScreen(navController) }
                 composable(Routes.MINE) { MineScreen(navController) }
                 composable(Routes.CAPTURE) { entry ->

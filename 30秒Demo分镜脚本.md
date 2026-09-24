@@ -37,13 +37,16 @@
 
 ## 彩排检查清单
 
-- [ ] Mock Server 起在 `0.0.0.0:8000`，`/health` 通
+> **一键自检（第三十九轮）**：评委进场前 30 秒跑 `bash scripts/verify/preflight.sh`——5 项全绿即可开演，红灯按提示修复。
+> 它自动覆盖了下面第 1/3/4/5 项 + 设备识别（模拟器/真机自适应，真机模式自动校验 gradle.properties 的 IP 配置）。
+
+- [x] Mock Server 起在 `0.0.0.0:8000`，`/health` 通 —— preflight 检查 1 已自动守护（含种子数显示）
 - [ ] 数据弄乱时一键恢复：`curl -X POST http://<电脑IP>:8000/admin/reset`（免重启 server，恢复 11 卡种子态）
-- [ ] 真机与电脑同 WiFi，APK 是带局域网 IP 的版本（当前 192.168.1.40）
-- [ ] 录音权限已授予（首次演示避免弹窗打断节奏）
-- [ ] 种子数据 11 条在屏（首次启动需 server 可达；含 related 落卡 idea_11/12/13）
+- [ ] 真机与电脑同 WiFi，APK 是带局域网 IP 的版本（当前 192.168.1.40）—— preflight 检查 5 会在真机模式下自动校验 gradle.properties 是否指向该 IP；**切换真机版前记得改 `avenlo-android/gradle.properties` 第 7 行后重新 assembleDebug**
+- [x] 录音权限已授予（首次演示避免弹窗打断节奏）—— preflight 检查 4 已自动守护
+- [x] 种子数据 11 条在屏（首次启动需 server 可达；含 related 落卡 idea_11/12/13）—— preflight 检查 2+3 已自动守护（CLEAR_TASK 冷启动归位 + 种子卡在屏）
 - [ ] 静音环境测过静默自动结束（阈值 800 需适配现场麦克风）
-- [x] 备份演示视频已录制（现场网络挂了顶上）——`emulator-screens/demo_backup.mp4`（169s，v6：v5 全部内容 + 今日回顾三跳（今日最佳→详情/意外关联→详情）+ 我的页统计格→灵感集列表，5.3MB）
+- [x] 备份演示视频已录制（现场网络挂了顶上）——`emulator-screens/demo_backup.mp4`（252s/6.7MB，v7：v6 全部内容 + 相关想法弹层「共N条 ›」→ 关联原因胶囊 → 点关联卡跳详情（第四十一轮），两段录制 ffmpeg 拼接）
 - [ ] 3D 打印戒指模型在手（0:03 口播时举起）
 
 ## 风险与对策

@@ -10,6 +10,9 @@ object Routes {
     fun collectionDetail(id: String) = "collection/$id"
     const val SEARCH = "search"
     const val REVIEW = "review"
+    const val STATS = "stats"
+    const val NETWORK = "network/{ideaId}"
+    fun network(ideaId: String) = "network/$ideaId"
     const val MINE = "mine"
     const val RECORDS = "records"
 
@@ -19,12 +22,11 @@ object Routes {
     const val CAPTURE = "capture?autoStart={autoStart}"
     fun capture(autoStart: Boolean = false) = "capture?autoStart=$autoStart"
 
-    /** 底部导航 4 Tab：首页 / 记录(S1 时间线) / 统计(S5 今日回顾) / 我的（标签 ⚠️ 源文件损坏，按语义推断） */
+    /** 底部导航 3 Tab（新设计稿定稿）：首页 / 灵感集 / 我的；统计入口在「我的」页统计卡 */
     data class Tab(val route: String, val label: String)
     val bottomTabs = listOf(
         Tab(HOME, "首页"),
-        Tab(RECORDS, "记录"),
-        Tab(REVIEW, "统计"),
+        Tab(COLLECTIONS, "灵感集"),
         Tab(MINE, "我的"),
     )
 }

@@ -321,6 +321,50 @@ cold_start_home
 if open_travel_detail; then
   dump_all | grep -q "共3条" && ok "详情页 related 3 条" || bad "详情页 related 异常"
   shot "R08_detail"
+  # step8.4（第四十二轮）：「共3条 ›」→ 相关想法弹层（含关联原因胶囊）→ 点卡跳详情
+  dump_to_tmp
+  SHEET=$(find_tap "
+for m in re.finditer(r'text=\"共3条 ›\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+  if [ -n "$SHEET" ]; then
+    "$ADB" shell "input swipe 540 1600 540 800 400"; sleep 2   # 滚到相关想法区（入口随滚动上移）
+    dump_to_tmp
+    SHEET=$(find_tap "
+for m in re.finditer(r'text=\"共3条 ›\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+    if [ -n "$SHEET" ]; then
+      "$ADB" shell "input tap $SHEET"; sleep 3
+      # 弹层判据（强特征）：关联原因胶囊——详情页横滑卡无「同灵感集」文案，弹层特有
+      if dump_all | grep -q "同灵感集"; then ok "相关想法弹层（关联原因可见）"; else bad "弹层未出现/无关联原因"; fi
+      dump_to_tmp
+      SROW=$(find_tap "
+for m in re.finditer(r'text=\"清晨的露水\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
+    x1,y1,x2,y2 = map(int, m.groups())
+    print(f'{(x1+x2)//2} {(y1+y2)//2}')
+    break
+")
+      if [ -n "$SROW" ]; then
+        "$ADB" shell "input tap $SROW"; sleep 3
+        if dump_all | grep -q "晨间露珠的微观摄影"; then ok "弹层卡跳详情"; else bad "弹层卡跳转异常"; fi
+        cold_start_home
+      else
+        bad "弹层内「清晨的露水」未找到"
+        "$ADB" shell "input keyevent 4"; sleep 2
+      fi
+    else
+      bad "滚动后「共3条 ›」未找到"
+    fi
+  else
+    bad "「共3条 ›」入口未找到"
+  fi
+  # 回到 idea_01 详情做 related 横滑跳转验证（冷启动后重进）
+  if open_travel_detail; then
   dump_to_tmp
   REL=$(find_tap "
 for m in re.finditer(r'text=\"清晨的露水\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"', xml):
@@ -334,6 +378,7 @@ for m in re.finditer(r'text=\"清晨的露水\"[^>]*bounds=\"\[(\d+),(\d+)\]\[(\
     shot "R09_related_jump"
   else
     bad "related「清晨的露水」未找到"
+  fi
   fi
 else
   bad "首页找不到「关于旅行的灵感」"

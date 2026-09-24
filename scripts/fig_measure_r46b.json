@@ -1,0 +1,146 @@
+{
+ "mock2_phone1": {
+  "size": [
+   720,
+   1977
+  ],
+  "fab": null,
+  "left_margin_px": 622,
+  "card_radius_px": null,
+  "band_top": null,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 81966,
+   "total": 85680
+  }
+ },
+ "mock2_phone2": {
+  "size": [
+   720,
+   1700
+  ],
+  "fab": null,
+  "left_margin_px": 0,
+  "card_radius_px": null,
+  "band_top": null,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 0,
+   "total": 73440
+  }
+ },
+ "mock2_phone3": {
+  "size": [
+   720,
+   1713
+  ],
+  "fab": null,
+  "left_margin_px": 62,
+  "card_radius_px": 0,
+  "band_top": 533,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 0,
+   "total": 74160
+  }
+ },
+ "mock2_phone4": {
+  "size": [
+   720,
+   1986
+  ],
+  "fab": null,
+  "left_margin_px": 0,
+  "card_radius_px": null,
+  "band_top": null,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 83028,
+   "total": 86400
+  }
+ },
+ "mock3_phone1": {
+  "size": [
+   720,
+   1579
+  ],
+  "fab": {
+   "y0": 1265,
+   "y1": 1370,
+   "h_px": 106,
+   "x_min": 360,
+   "x_max": 641,
+   "w_px": 282,
+   "right_gap_px": 78,
+   "bottom_gap_px": 208
+  },
+  "left_margin_px": 101,
+  "card_radius_px": null,
+  "band_top": null,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 11217,
+   "total": 68400
+  }
+ },
+ "mock3_phone2": {
+  "size": [
+   720,
+   1556
+  ],
+  "fab": null,
+  "left_margin_px": 65,
+  "card_radius_px": null,
+  "band_top": null,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 28083,
+   "total": 67680
+  }
+ },
+ "root_phone1": {
+  "size": [
+   720,
+   1734
+  ],
+  "fab": null,
+  "left_margin_px": 28,
+  "card_radius_px": 2,
+  "band_top": 662,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 3594,
+   "total": 75600
+  }
+ },
+ "root_phone2": {
+  "size": [
+   720,
+   1700
+  ],
+  "fab": null,
+  "left_margin_px": 30,
+  "card_radius_px": 0,
+  "band_top": 510,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 3065,
+   "total": 73440
+  }
+ },
+ "root_phone3": {
+  "size": [
+   720,
+   1727
+  ],
+  "fab": null,
+  "left_margin_px": 0,
+  "card_radius_px": 0,
+  "band_top": 518,
+  "nav": {
+   "primary_px": 0,
+   "bg_px": 3708,
+   "total": 74880
+  }
+ }
+}

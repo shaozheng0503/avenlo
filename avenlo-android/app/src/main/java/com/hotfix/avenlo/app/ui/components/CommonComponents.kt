@@ -48,13 +48,13 @@ fun WaveIconTile(toneIndex: Int, modifier: Modifier = Modifier, icon: ImageVecto
     }
 }
 
-/** 浅色胶囊标签 chip（马卡龙风：浅底深字）；onClick 非空时可点（如搜索屏标签点击触发搜索） */
+/** 浅色胶囊标签 chip（新设计稿：#前缀 + 浅底深字）；onClick 非空时可点（如搜索屏标签点击触发搜索） */
 @Composable
-fun TagChip(text: String, modifier: Modifier = Modifier, tone: Color? = null, onClick: (() -> Unit)? = null) {
+fun TagChip(text: String, modifier: Modifier = Modifier, tone: Color? = null, onClick: (() -> Unit)? = null, showHash: Boolean = true) {
     val bg = tone?.copy(alpha = 0.16f) ?: AvenloTokens.Primary.copy(alpha = 0.12f)
     val fg = tone ?: AvenloTokens.Primary
     Text(
-        text = text,
+        text = if (showHash) "#$text" else text,
         color = fg,
         fontSize = 11.sp,
         fontWeight = FontWeight.Medium,
