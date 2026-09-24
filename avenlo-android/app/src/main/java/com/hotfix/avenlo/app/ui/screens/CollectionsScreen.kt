@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -86,7 +85,7 @@ fun CollectionsScreen(nav: NavController) {
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     rowCols.forEach { col ->
-                        Box(Modifier.weight(1f)) { CollectionCard(col, collections.indexOf(col), nav) }
+                        Box(Modifier.weight(1f)) { CollectionCard(col, nav) }
                     }
                     // 补位保持网格形状
                     repeat(2 - rowCols.size) { Spacer(Modifier.weight(1f)) }
@@ -197,11 +196,11 @@ fun CollectionsScreen(nav: NavController) {
     }
 }
 
-/** 单个灵感集卡片：上半浅主题色底（名称+副题+计数徽标）+ 下半照片 + 白圆箭头 */
+/** 单个灵感集卡片（新 Hotfix.fig 精确版）：整卡浅主题色纯色块（217×164px@3x ≈ 158×120dp 圆角12），
+ *  左上主题名（22sp 加粗深字）+ 副题两行（16sp）+ 右上计数纯数字（22sp，无徽标无照片无箭头） */
 @Composable
 private fun CollectionCard(
     col: com.hotfix.avenlo.domain.model.Collection,
-    index: Int,
     nav: NavController,
 ) {
     val tone = when (col.tone) {
@@ -210,45 +209,28 @@ private fun CollectionCard(
         com.hotfix.avenlo.domain.model.Collection.Tone.GOLD -> AvenloTokens.goldTone
         com.hotfix.avenlo.domain.model.Collection.Tone.BLUE -> AvenloTokens.blueTone
     }
-    val photoRes = listOf(
-        com.hotfix.avenlo.app.R.drawable.photo_seed_01,
-        com.hotfix.avenlo.app.R.drawable.photo_seed_02,
-        com.hotfix.avenlo.app.R.drawable.photo_seed_03,
-        com.hotfix.avenlo.app.R.drawable.photo_seed_04,
-    )[index % 4]
     Box(
-        Modifier.height(160.dp).clip(CardShape).background(AvenloTokens.Surface).clickable {
+        Modifier.height(150.dp).fillMaxWidth().clip(CardShape).background(tone.bg).clickable {
             nav.navigate(com.hotfix.avenlo.app.ui.navigation.Routes.collectionDetail(col.id))
         },
     ) {
-        Column {
-            // 上半部：浅主题色底 + 主题名 + 副题
-            Column(
-                Modifier.fillMaxWidth().weight(1.2f).background(tone.bg).padding(12.dp)
-            ) {
-                Box(Modifier.fillMaxWidth()) {
-                    Text(col.name, fontSize = AvenloTokens.FontSizeLg, fontWeight = FontWeight.Bold, color = tone.text)
-                    // 右上角彩色圆形计数徽标
-                    Box(
-                        Modifier.align(Alignment.TopEnd).size(24.dp).clip(CircleShape).background(tone.badge),
-                        contentAlignment = Alignment.Center,
-                    ) { Text("${col.count}", color = Color.White, fontSize = AvenloTokens.FontSizeXs, fontWeight = FontWeight.Bold) }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(col.subtitle, fontSize = AvenloTokens.FontSizeXs, color = tone.text.copy(alpha = 0.7f), maxLines = 1)
+        Column(Modifier.fillMaxSize().padding(14.dp)) {
+            Box(Modifier.fillMaxWidth()) {
+                Text(col.name, fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold, color = tone.text)
+                // 右上角计数：纯数字（fig：22sp 深字，无圆形底）
+                Text(
+                    "${col.count}", fontSize = AvenloTokens.FontSizeXl, fontWeight = FontWeight.Bold,
+                    fontFamily = com.hotfix.avenlo.app.ui.theme.InterFont,
+                    color = tone.text, modifier = Modifier.align(Alignment.TopEnd),
+                )
             }
-            // 下半部：照片区（.fig 内嵌实景照片）
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.res.painterResource(photoRes),
-                contentDescription = col.name,
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth().weight(1f),
+            Spacer(Modifier.height(6.dp))
+            // 副题两行（fig：16sp，7×0.7 透明度副字色）
+            Text(
+                col.subtitle, fontSize = AvenloTokens.FontSizeBase, lineHeight = 22.sp,
+                color = tone.text.copy(alpha = 0.7f), maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
         }
-        // 右下白色圆形 → 按钮
-        Box(
-            Modifier.align(Alignment.BottomEnd).padding(10.dp).size(26.dp).clip(CircleShape).background(Color.White),
-            contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Filled.PlayArrow, "打开", tint = tone.badge, modifier = Modifier.size(16.dp)) }
     }
 }

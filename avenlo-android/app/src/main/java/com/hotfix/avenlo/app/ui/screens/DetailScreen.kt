@@ -211,11 +211,14 @@ fun DetailScreen(nav: NavController, ideaId: String) {
             Spacer(Modifier.height(12.dp))
             LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(card.related, key = { it.id }) { rel ->
-                    val photo = listOf(
-                        com.hotfix.avenlo.app.R.drawable.photo_seed_08,
-                        com.hotfix.avenlo.app.R.drawable.photo_seed_09,
-                        com.hotfix.avenlo.app.R.drawable.photo_seed_03,
-                    )[card.related.indexOf(rel) % 3]
+                    // 缩略块：纯色块（fig 新版无照片；按 tag 呼应灵感集四色）
+                    val thumbTone = when (rel.tag) {
+                        "旅行", "户外" -> AvenloTokens.sageTone
+                        "工作", "创作" -> AvenloTokens.peachTone
+                        "生活", "自然", "观察", "城市" -> AvenloTokens.goldTone
+                        "成长", "摄影", "日记", "播客" -> AvenloTokens.blueTone
+                        else -> AvenloTokens.goldTone
+                    }
                     Column(
                         Modifier
                             .width(104.dp)
@@ -224,12 +227,13 @@ fun DetailScreen(nav: NavController, ideaId: String) {
                             .clickable { nav.navigate(com.hotfix.avenlo.app.ui.navigation.Routes.detail(rel.id)) }
                             .padding(10.dp),
                     ) {
-                        Box(Modifier.fillMaxWidth().height(64.dp).clip(ThumbShape)) {
-                            androidx.compose.foundation.Image(
-                                painter = androidx.compose.ui.res.painterResource(photo),
-                                contentDescription = rel.title,
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize(),
+                        Box(
+                            Modifier.fillMaxWidth().height(64.dp).clip(ThumbShape).background(thumbTone.bg),
+                            contentAlignment = androidx.compose.ui.Alignment.Center,
+                        ) {
+                            Text(
+                                rel.tag ?: "灵感", fontSize = AvenloTokens.FontSizeBase,
+                                fontWeight = FontWeight.Bold, color = thumbTone.text,
                             )
                         }
                         Spacer(Modifier.height(8.dp))

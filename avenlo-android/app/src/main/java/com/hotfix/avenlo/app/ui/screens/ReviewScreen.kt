@@ -27,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -76,20 +75,15 @@ fun ReviewScreen(nav: NavController) {
             Text("今日最佳灵感", Modifier.padding(horizontal = 24.dp, vertical = 8.dp), fontSize = AvenloTokens.FontSizeSm, fontWeight = FontWeight.Bold, color = AvenloTokens.TextSecondary)
             Box(
                 Modifier.padding(horizontal = 24.dp).fillMaxWidth().height(200.dp).clip(CardShape)
+                    .background(AvenloTokens.peachTone.bg)
                     .then(if (review.bestIdea.ideaId.isNotEmpty()) Modifier.clickable { nav.navigate(Routes.detail(review.bestIdea.ideaId)) } else Modifier),
             ) {
-                androidx.compose.foundation.Image(
-                    painter = androidx.compose.ui.res.painterResource(com.hotfix.avenlo.app.R.drawable.photo_seed_05),
-                    contentDescription = "今日最佳灵感",
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC33402F)))))
+                // 主题色纯色块背景（fig 新版：米杏底 #F5E3D8，无照片）
                 Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
-                    Text("“${review.bestIdea.quote}”", color = Color.White, fontSize = AvenloTokens.FontSizeLg, fontWeight = FontWeight.Bold)
+                    Text("“${review.bestIdea.quote}”", color = AvenloTokens.TextPrimary, fontSize = AvenloTokens.FontSizeLg, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        review.bestIdea.tags.forEach { TagChip(it, tone = Color.White.copy(alpha = 0.85f)) }
+                        review.bestIdea.tags.forEach { TagChip(it) }
                     }
                 }
             }
@@ -185,16 +179,13 @@ private fun SerendipityCard(
         modifier.fillMaxWidth().clip(CardShape).background(AvenloTokens.Surface)
             .then(if (card.ideaId.isNotEmpty()) Modifier.clickable { onOpen() } else Modifier),
     ) {
-        Box(Modifier.fillMaxWidth().height(76.dp)) {
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.res.painterResource(
-                    if (card.title == "城市与人") com.hotfix.avenlo.app.R.drawable.photo_seed_06
-                    else com.hotfix.avenlo.app.R.drawable.photo_seed_07
-                ),
-                contentDescription = card.title,
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
+        // 缩略块：主题色纯色块（fig 新版无照片；左右两卡用 sage/peach 区分）
+        Box(
+            Modifier.fillMaxWidth().height(76.dp)
+                .background(if (card.title == "城市与人") AvenloTokens.sageTone.bg else AvenloTokens.peachTone.bg),
+            contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) {
+            Text(card.tag, color = tone.text, fontSize = AvenloTokens.FontSizeLg, fontWeight = FontWeight.Bold)
         }
         Column(Modifier.padding(10.dp)) {
             Text(card.title, fontSize = AvenloTokens.FontSizeSm, fontWeight = FontWeight.Bold)
