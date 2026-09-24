@@ -20,12 +20,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.WbSunny
@@ -63,6 +65,7 @@ import com.hotfix.avenlo.domain.capture.CaptureSpec
 import com.hotfix.avenlo.domain.capture.HapticEvent
 import com.hotfix.avenlo.domain.model.CardStatus
 import com.hotfix.avenlo.domain.model.IdeaCard
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -87,6 +90,10 @@ fun HomeScreen(nav: NavController) {
 
     val today = SimpleDateFormat("yyyy年M月d日", Locale.CHINESE).format(Date())
     val week = SimpleDateFormat("EEEE", Locale.CHINESE).format(Date())
+
+    // 列表滚动状态（「回到最新」胶囊用：下滚后出现在底栏上方）
+    val listState = rememberLazyListState()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize()) {
         // ---- 问候头（新设计稿：日期一行完整显示「2025年9月22日星期一」）----
@@ -157,7 +164,7 @@ fun HomeScreen(nav: NavController) {
         Spacer(Modifier.height(4.dp))
 
         // ---- 分组列表 ----
-        LazyColumn(Modifier.weight(1f)) {
+        LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
             val todayCards = ideas.filter { isToday(it.createdAt) }
             val weekCards = ideas.filter { !isToday(it.createdAt) && it.createdAt > System.currentTimeMillis() - 7 * 86_400_000L }
             val earlierCards = ideas.filter { it.createdAt <= System.currentTimeMillis() - 7 * 86_400_000L }
@@ -189,6 +196,32 @@ fun HomeScreen(nav: NavController) {
     val view = LocalView.current
     Box(Modifier.fillMaxSize()) {
         var holdProgress by remember { mutableStateOf(0f) }
+        // 「回到最新」胶囊（新设计稿 v3：列表下滚后出现在底栏上方，点击回顶并刷新）
+        if (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 120) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 12.dp)
+                    .shadow(3.dp, RoundedCornerShape(999.dp))
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AvenloTokens.Surface)
+                    .clickable {
+                        scope.launch {
+                            listState.animateScrollToItem(0)
+                            repo.refresh()
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.KeyboardArrowUp, null,
+                    tint = AvenloTokens.Primary, modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text("回到最新", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = AvenloTokens.Primary)
+            }
+        }
         Box(
             Modifier
                 .align(Alignment.BottomEnd)
